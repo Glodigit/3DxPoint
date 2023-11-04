@@ -3,14 +3,15 @@
 // SPDX-License-Identifier: Boost Software License 1.0
 
 /* ToDo List:
-	- 	Make Set functions for all variables in SpaceState
+	- 	Clean up old comments and unused variables
+	-	change triggerEvent to SpaceState.ButtonEvent
 	*/
 
 #include "pch.h"
 #include "stdlib.h"
 #include "stdio.h"
 #include <complex>
-#define LOGFILE_ENABLED (false)
+#define LOGFILE_ENABLED (true)
 #if LOGFILE_ENABLED
 #include <string>
 #endif
@@ -19,7 +20,7 @@
 // #define TXT_PATH L"C:\\Users\\[PUT_USERNAME_HERE]\\source\\repos\\3DxPoint\\3DxPoint\\3DxPoint.txt"
 #define OPEN_LOGFILE_SUCCESSFUL (_wfopen_s(&fp, TXT_PATH, L"a,ccs=UTF-8") == 0 && fp != NULL)
 #define INT_ARGS _wtoi(wcsrchr(args, L' '))
-//		read like (int)*args
+		// read like (int)*args
 
 // Angle conversions
 const double pi = std::acos(-1);
@@ -28,13 +29,11 @@ const double toDegrees = 180.0 / pi;
 
 typedef struct SpaceState
 {
-	// int MouseX{};
-	// int MouseY{};
-	int Scroll{};
 	std::complex<double> Mouse; // In the form y + x i
+	int Scroll{};
 	double Speed = 1;
-	//bool Button[8][2]{}; // A near and far set of virtual buttons
 	std::complex<double> ButtonRing;
+	std::complex<double> ButtonEvent;
 	bool MirrorScroll{};
 	bool MirrorRing{};
 } SpaceState;
@@ -189,17 +188,15 @@ extern "C" __declspec(dllexport) void LogAxis(WCHAR *args)
 #endif
 }
 
-#if LOGFILE_ENABLED
-static int logCount = 0;
-#endif
 extern "C" __declspec(dllexport) void LogButton(WCHAR *args)
 {
 #if LOGFILE_ENABLED
-	logCount++;
+	static int logButtonCount = 0;
+	logButtonCount++;
 	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
-		fwprintf(fp, L"Button Event %d: %s\n", logCount, args);
+		fwprintf(fp, L"Button Event %d: %s\n", logButtonCount, args);
 		fclose(fp);
 	}
 #endif
@@ -233,7 +230,7 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 		break;
 	case MouseEvent::scroll:
 		input.mi.dwFlags = MOUSEEVENTF_WHEEL;
-		input.mi.mouseData = eventValue; //  *WHEEL_DATA
+		input.mi.mouseData = eventValue;
 		break;
 	case MouseEvent::x:
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
@@ -331,41 +328,6 @@ void SendModifierKey(WORD wVk, bool pressed)
 
 /// Set SpacePoint functions / exports
 void SelectButtonOnRing(void);
-#if 1
-extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR *args)
-{
-	// Get string that starts with ' ' -> convert to int -> set complex number
-	SpacePoint.ButtonRing.real(INT_ARGS);
-	//LogButtonRingEvent(0);
-
-	SelectButtonOnRing();
-}
-extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR *args)
-{
-	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
-	//LogButtonRingEvent(1);
-
-	SelectButtonOnRing();
-}
-/// <summary>
-/// Set the ButtonRing value using a single function call for the _X, _Y, _Rx or _Ry axes.
-/// Mainly for testing / debug purposes.
-/// </summary>
-/// <param name="args"></param>
-extern "C" __declspec(dllexport) void SetButtonRing(WCHAR *args)
-{
-	if (wcsstr(args, L"_Rx") != NULL || wcsstr(args, L"_Y") != NULL)
-	{
-		// Tilting / moving towards positive Y should result in a 0 degree
-		// angle, instead of the traditional 90.
-		SetButtonRingReal(args);
-	}
-	else if (wcsstr(args, L"_Ry") != NULL || wcsstr(args, L"_X") != NULL)
-	{
-		SetButtonRingImag(args);
-	}
-}
-
 extern "C" __declspec(dllexport) void MirrorRing(WCHAR *args)
 {
 	if (INT_ARGS)
@@ -473,22 +435,6 @@ bool doubleInRange(double value, double minValue, double maxValue)
 
 void SelectButtonOnRing()
 {
-	/*
-	 * so if magnitude isn't 0, start a timer, else stop and reset the timer
-	 * alternatively, magnitude - maxMagnitude <= 0
-	 * if the value is greater than entryThreshold, check each i = [0, 45, 90...] +/- angleTolerance
-	 *	if i > 180, switch to j = ( i - 360 ) else just use i
-	 * if j >= eTol[1] then k = outer else if >= eTol[0] then k = inner else k = none
-	 * 00 -> 35 -> 34 should capture a triggerEvent, then the angle should be determined and
-	 * 27 -> 17 -> 00 should sendInput a pressUp event, set triggerEvent to 0 and octal = 0
-	 */
-
-	enum class RingType
-	{
-		inner,
-		outer,
-		none
-	};
 	enum class Octant
 	{
 		N,
@@ -503,9 +449,6 @@ void SelectButtonOnRing()
 	//Octant octant;
 
 	static double prevMagnitude = 0;
-	static std::complex<double> triggerEvent;
-	// static bool onExit = false;
-	//static bool buttonAlreadyPressed = false;
 
 	const UINT entryThreshold[2] = {45, 135};
 	const double exitThreshold = 15;
@@ -514,12 +457,13 @@ void SelectButtonOnRing()
 	double currentMagnitude = std::abs(SpacePoint.ButtonRing);
 	bool onEntry = false, onExit = false;
 
+	// Rising / falling edge of Schmitt trigger
 	if (currentMagnitude < prevMagnitude &&
 		currentMagnitude > exitThreshold &&
 		prevMagnitude >= entryThreshold[0] &&
-		std::abs(triggerEvent) == 0)
+		std::abs(SpacePoint.ButtonEvent) == 0)
 	{
-		triggerEvent = SpacePoint.ButtonRing;
+		SpacePoint.ButtonEvent = SpacePoint.ButtonRing;
 		onEntry = true;
 	}
 	else if (currentMagnitude < exitThreshold) { 
@@ -537,11 +481,11 @@ void SelectButtonOnRing()
 	}
 #endif
 
-	double triggerMagnitude = std::abs(triggerEvent);
+	double triggerMagnitude = std::abs(SpacePoint.ButtonEvent);
 	if (triggerMagnitude != 0) // A trigger point has been obtained
 	{
 		bool isOuter = (triggerMagnitude >= entryThreshold[1]);
-		double angle = toDegrees * std::arg(triggerEvent);
+		double angle = toDegrees * std::arg(SpacePoint.ButtonEvent);
 		const int a = anglePadding;
 
 		// Ordered clockwise from south
@@ -771,254 +715,66 @@ void SelectButtonOnRing()
 		}
 		else // Likely padding gap.
 		{
-			// LogMessage(L"Trigger Event: Gap");
 			onExit = true;
 #if LOGFILE_ENABLED
 			FILE *fp;
 			if OPEN_LOGFILE_SUCCESSFUL
 			{
 				fwprintf(fp, L"Trigger Gap Event: %4d ∠ %-4d\n",
-						 (int)std::abs(triggerEvent),
-						 (int)std::round(toDegrees * std::arg(triggerEvent)));
+						 (int)std::abs(SpacePoint.ButtonEvent),
+						 (int)std::round(toDegrees * std::arg(SpacePoint.ButtonEvent)));
 				fclose(fp);
 			}
 #endif
-
-			// triggerEvent = (0.0, 0.0);
-			// return;
 		}
-		// debug to test octants
-		// triggerEvent = (0.0, 0.0);
-
 		// Commands to execute at the end, no matter the ButtonRing angle, 
 		// instead of having to copy/paste these lines 8 times over. It's like
 		// end GCODEs in 3D printing.
 		if (onExit)
 		{
 			// Reset variables
-			triggerEvent = (0.0, 0.0);
-			//buttonAlreadyPressed = false;
-
+			SpacePoint.ButtonEvent = (0.0, 0.0);
 		}
-		//else if (!buttonAlreadyPressed) { buttonAlreadyPressed = true; }
 	}
-	//else {
 		prevMagnitude = currentMagnitude;
 
-//	}
+}
 
+
+extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
+{
+	// Get string that starts with ' ' -> convert to int -> set complex number
+	SpacePoint.ButtonRing.real(INT_ARGS);
+	//LogButtonRingEvent(0);
+
+	SelectButtonOnRing();
+}
+extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
+{
+	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
+	//LogButtonRingEvent(1);
+
+	SelectButtonOnRing();
+}
+/// <summary>
+/// Set the ButtonRing value using a single function call for the _X, _Y, _Rx or _Ry axes.
+/// Mainly for testing / debug purposes.
+/// </summary>
+/// <param name="args"></param>
+extern "C" __declspec(dllexport) void SetButtonRing(WCHAR * args)
+{
+	if (wcsstr(args, L"_Rx") != NULL || wcsstr(args, L"_Y") != NULL)
+	{
+		// Tilting / moving towards positive Y should result in a 0 degree
+		// angle, instead of the traditional 90.
+		SetButtonRingReal(args);
+	}
+	else if (wcsstr(args, L"_Ry") != NULL || wcsstr(args, L"_X") != NULL)
+	{
+		SetButtonRingImag(args);
+	}
 }
 
 /// Archived code
 #if 1
-
-/// Old SendMouseButton functions
-#if 0
-static void SendLeftMouseButton(bool press)
-{
-	UINT status;
-	INPUT input;
-	const UINT nInputs = 1;
-
-	ZeroMemory(&input, sizeof(INPUT));
-	input.type = INPUT_MOUSE;
-	input.mi.dwFlags = press ? MOUSEEVENTF_LEFTDOWN : MOUSEEVENTF_LEFTUP;
-
-	/******** This doesn't work if the window under the cursor is running as admin, but 3DxService is not run as admin *********/
-	status = ::SendInput(nInputs, &input, sizeof(INPUT));
-
-	if (status != nInputs)
-	{
-		DWORD error = GetLastError();
-#ifdef TRACE
-		// fwprintf(fp, L"SendLeftMouseButton SendInput Error = 0x%x\n", error);
-#endif
-	}
-}
-
-static void SendRightMouseButton(bool press)
-{
-	UINT status;
-	INPUT input;
-	const UINT nInputs = 1;
-
-	ZeroMemory(&input, sizeof(INPUT));
-	input.type = INPUT_MOUSE;
-	input.mi.dwFlags = press ? MOUSEEVENTF_RIGHTDOWN : MOUSEEVENTF_RIGHTUP;
-
-	/******** This doesn't work if the window under the cursor is running as admin, but 3DxService is not run as admin *********/
-	status = ::SendInput(nInputs, &input, sizeof(INPUT));
-
-	if (status != nInputs)
-	{
-		DWORD error = GetLastError();
-#ifdef TRACE
-		// fwprintf(fp, L"SendRightMouseButton SendInput Error = 0x%x\n", error);
-#endif
-	}
-}
-
-static void SendMiddleMouseButton(bool press)
-{
-	UINT status;
-	INPUT input;
-	const UINT nInputs = 1;
-
-	ZeroMemory(&input, sizeof(INPUT));
-	input.type = INPUT_MOUSE;
-	input.mi.dwFlags = press ? MOUSEEVENTF_MIDDLEDOWN : MOUSEEVENTF_MIDDLEUP;
-
-	/******** This doesn't work if the window under the cursor is running as admin, but 3DxService is not run as admin *********/
-	status = ::SendInput(nInputs, &input, sizeof(INPUT));
-
-	if (status != nInputs)
-	{
-		DWORD error = GetLastError();
-#ifdef TRACE
-		// fwprintf(fp, L"SendMiddleMouseButton SendInput Error = 0x%x\n", error);
-#endif
-	}
-}
-
-static void SendMouseWheel(int increment)
-{
-	UINT status;
-	INPUT input;
-	const UINT nInputs = 1;
-
-	ZeroMemory(&input, sizeof(INPUT));
-	input.type = INPUT_MOUSE;
-	input.mi.dwFlags = MOUSEEVENTF_WHEEL;
-	input.mi.mouseData = increment; //  *WHEEL_DATA??
-
-	/******** This doesn't work if the window under the cursor is running as admin, but 3DxService is not run as admin *********/
-	status = ::SendInput(nInputs, &input, sizeof(INPUT));
-
-	if (status != nInputs)
-	{
-		DWORD error = GetLastError();
-#ifdef TRACE
-		// fwprintf(fp, L"SendRightMouseButton SendInput Error = 0x%x\n", error);
-#endif
-	}
-}
-
-#endif
-
-// Unused code for holding mouse buttons with the axes from <Axis/> in the XML
-#if 0
-static bool HoldingLMB = false;
-extern "C" __declspec(dllexport) void LeftMouseButton_PressAndHold(WCHAR *args)
-{
-	// TO BE SAFE, SHOULD CALL THIS WITH 0 on DLLEXIT.
-	// It also doesn't detect if the focus is changed to another app.  It will leave the button pressed.  Which may or may not be desired.
-
-	int threshold = 300; // positive, expecting AxisAction to carve out where this is executed, and the abs(axisValue) to be used below
-
-#ifdef TRACE
-	FILE *fp;
-	if (_wfopen_s(&fp, TXT_PATH, L"a") == 0 && fp != NULL)
-	{
-		fwprintf(fp, L"LeftMouseButton_PressAndHold(%d) Event: %s\n", threshold, args);
-	}
-#endif
-
-	WCHAR *axisValueStr = wcsrchr(args, L' ');
-	int axisValue = _wtoi(axisValueStr);
-	axisValue = abs(axisValue);
-
-	if (HoldingLMB == true && axisValue > threshold)
-	{
-// Button is pressed, wait until it is released
-#ifdef TRACE
-		fwprintf(fp, L"LeftMouseButton_PressAndHold: HoldingLMB while axisValue > %d)\n", threshold);
-		fclose(fp);
-#endif
-		return;
-	}
-
-	else if (HoldingLMB == true && axisValue < threshold)
-	{
-// Button is pressed, release it
-#ifdef TRACE
-		fwprintf(fp, L"LeftMouseButton_PressAndHold: axisValue < %d, SendLeftMouseButton(false)\n", threshold);
-		fclose(fp);
-#endif
-		HoldingLMB = false;
-		SendLeftMouseButton(false);
-	}
-
-	else if (HoldingLMB == false && axisValue > threshold)
-	{
-// Button is not pressed, press and hold it
-#ifdef TRACE
-		fwprintf(fp, L"LeftMouseButton_PressAndHold: SendLeftMouseButton(true)\n");
-		fclose(fp);
-#endif
-		HoldingLMB = true;
-		SendLeftMouseButton(true);
-	}
-
-#ifdef TRACE
-	fclose(fp);
-#endif
-}
-
-static bool HoldingRMB = false;
-extern "C" __declspec(dllexport) void RightMouseButton_PressAndHold(WCHAR *args)
-{
-	// TO BE SAFE, SHOULD CALL THIS WITH 0 on DLLEXIT
-	// It also doesn't detect if the focus is changed to another app.  It will leave the button pressed.  Which may or may not be desired.
-
-	int threshold = 300; // positive, expecting AxisAction to carve out where this is executed, and the abs(axisValue) to be used below
-						 // #define TRACE
-#ifdef TRACE
-	FILE *fp;
-	if (_wfopen_s(&fp, TXT_PATH, L"a") == 0 && fp != NULL)
-	{
-		// fwprintf(fp, L"RightMouseButton_PressAndHold(%d) Event: %s\n", threshold, args);
-	}
-#endif
-
-	WCHAR *axisValueStr = wcsrchr(args, L' ');
-	int axisValue = _wtoi(axisValueStr);
-	axisValue = abs(axisValue);
-
-	if (HoldingRMB == true && axisValue > threshold)
-	{
-		// Button is pressed, wait until it is released
-#ifdef TRACE
-		fwprintf(fp, L"RightMouseButton_PressAndHold: HoldingRMB while axisValue > %d)\n", threshold);
-		fclose(fp);
-#endif
-		return;
-	}
-
-	else if (HoldingRMB == true && axisValue < threshold)
-	{
-		// Button is pressed, release it
-#ifdef TRACE
-		fwprintf(fp, L"RightMouseButton_PressAndHold: axisValue < %d, SendRightMouseButton(false)\n", threshold);
-		fclose(fp);
-#endif
-		HoldingRMB = false;
-		SendRightMouseButton(false);
-	}
-
-	else if (HoldingRMB == false && axisValue > threshold)
-	{
-		// Button is not pressed, press and hold it
-#ifdef TRACE
-		fwprintf(fp, L"RightMouseButton_PressAndHold: SendRightMouseButton(true)\n");
-		fclose(fp);
-#endif
-		HoldingRMB = true;
-		SendRightMouseButton(true);
-	}
-
-#ifdef TRACE
-	fclose(fp);
-#endif
-}
-#endif
 #endif
