@@ -11,16 +11,29 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <complex>
-#define LOGFILE_ENABLED (false)
+#define LOGFILE_ENABLED (true)
 #if LOGFILE_ENABLED
 #include <string>
 #endif
 
 #define TXT_PATH L"C:\\Log 3DxPoint\\3DxPoint.txt"
-	// #define TXT_PATH L"C:\\Users\\[PUT_USERNAME_HERE]\\source\\repos\\3DxPoint\\3DxPoint\\3DxPoint.txt"
+// #define TXT_PATH L"C:\\Users\\[PUT_USERNAME_HERE]\\source\\repos\\3DxPoint\\3DxPoint\\3DxPoint.txt"
 #define OPEN_LOGFILE_SUCCESSFUL (_wfopen_s(&fp, TXT_PATH, L"a,ccs=UTF-8") == 0 && fp != NULL)
 #define INT_ARGS _wtoi(wcsrchr(args, L' '))
-		// read like (int)*args
+//		read like (int)*args
+
+enum class PC
+{
+	none,
+	// Add / rename PC names / identifiers below
+	Teti,
+	Q3ti
+};
+/// <summary>
+/// The PC to create the DLL for.
+/// Usually used to compile different virtual buttons for different PCs.
+/// </summary>
+const PC PC_Select = PC::Teti;
 
 // Angle conversions
 const double pi = std::acos(-1);
@@ -66,7 +79,6 @@ typedef struct UdCfgDLLProcessInfo
 } UdCfgDLLProcessInfo;
 #endif
 
-
 // DLL Initialization function.
 // This gives you a chance to do any one time initialization immediately after this DLL is loaded.
 // It is called immediately after the DllMain is called (which is called during LoadLibrary).
@@ -74,12 +86,12 @@ typedef struct UdCfgDLLProcessInfo
 extern "C" __declspec(dllexport) LRESULT DllInit(LPVOID lpReserved)
 {
 #if LOGFILE_ENABLED
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 
 #ifdef LOG_PROCESSINFO
-		UdCfgDLLProcessInfo * pInfo = (UdCfgDLLProcessInfo*)lpReserved;
+		UdCfgDLLProcessInfo *pInfo = (UdCfgDLLProcessInfo *)lpReserved;
 		fwprintf(fp, L"DllInit: ProcessInfo: size=%d, type=%d, pid=%d, syncID=%d, exeName=%s\n", pInfo->size, pInfo->processInfoType, pInfo->pid, pInfo->syncID, pInfo->exeName);
 #else
 		fwprintf(fp, L"DllInit called\n");
@@ -98,12 +110,12 @@ extern "C" __declspec(dllexport) LRESULT DllInit(LPVOID lpReserved)
 extern "C" __declspec(dllexport) LRESULT DllExit(LPVOID lpReserved)
 {
 #if LOGFILE_ENABLED
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 
 #ifdef LOG_PROCESSINFO
-		UdCfgDLLProcessInfo * pInfo = (UdCfgDLLProcessInfo*)lpReserved;
+		UdCfgDLLProcessInfo *pInfo = (UdCfgDLLProcessInfo *)lpReserved;
 		fwprintf(fp, L"DllExit: ProcessInfo: size=%d, type=%d, pid=%d, exeName=%s\n", pInfo->size, pInfo->processInfoType, pInfo->pid, pInfo->exeName);
 #else
 		fwprintf(fp, L"DllExit called\n");
@@ -118,10 +130,10 @@ extern "C" __declspec(dllexport) LRESULT DllExit(LPVOID lpReserved)
 
 /// Logging functions/exports
 #if 1
-void LogMessage(wchar_t* s)
+void LogMessage(wchar_t *s)
 {
 #if LOGFILE_ENABLED
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, s);
@@ -134,7 +146,7 @@ void LogMessage(wchar_t* s)
 void LogButtonRingEvent(bool realOrImag)
 {
 #if LOGFILE_ENABLED
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"ButtonRing: %s Event: %4d ∠ %-4d  (%-4d + %4d i)\n",
@@ -153,7 +165,7 @@ void LogButtonRingEvent(bool realOrImag)
 void LogMirrorEvent(bool scrollOrRing)
 {
 #if LOGFILE_ENABLED
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Mirror %s Event: %d\n",
@@ -167,7 +179,7 @@ void LogMirrorEvent(bool scrollOrRing)
 void LogSpeedEvent()
 {
 #if LOGFILE_ENABLED
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Speed Multiplier Event: %f\n", SpacePoint.Speed);
@@ -177,10 +189,10 @@ void LogSpeedEvent()
 }
 
 // This is an example of an exported function.
-extern "C" __declspec(dllexport) void LogAxis(WCHAR * args)
+extern "C" __declspec(dllexport) void LogAxis(WCHAR *args)
 {
 #if LOGFILE_ENABLED
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Axis Event: %s\n", args);
@@ -189,12 +201,12 @@ extern "C" __declspec(dllexport) void LogAxis(WCHAR * args)
 #endif
 }
 
-extern "C" __declspec(dllexport) void LogButton(WCHAR * args)
+extern "C" __declspec(dllexport) void LogButton(WCHAR *args)
 {
 #if LOGFILE_ENABLED
 	static int logButtonCount = 0;
 	logButtonCount++;
-	FILE* fp;
+	FILE *fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Button Event %d: %s\n", logButtonCount, args);
@@ -255,7 +267,7 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 	if (status != nInputs)
 	{
 #if LOGFILE_ENABLED
-		FILE* fp;
+		FILE *fp;
 		if OPEN_LOGFILE_SUCCESSFUL
 		{
 			DWORD error = GetLastError();
@@ -287,7 +299,7 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 				eventName = "Unknown";
 				break;
 			}
-			fwprintf(fp, L"%s SendInput Error = 0x%x\n", (wchar_t*)eventName.c_str(), error);
+			fwprintf(fp, L"%s SendInput Error = 0x%x\n", (wchar_t *)eventName.c_str(), error);
 			fclose(fp);
 		}
 #endif
@@ -329,7 +341,7 @@ void SendModifierKey(WORD wVk, bool pressed)
 
 /// Set SpacePoint functions / exports
 void SelectButtonOnRing(void);
-extern "C" __declspec(dllexport) void MirrorRing(WCHAR * args)
+extern "C" __declspec(dllexport) void MirrorRing(WCHAR *args)
 {
 	if (INT_ARGS)
 	{
@@ -338,7 +350,7 @@ extern "C" __declspec(dllexport) void MirrorRing(WCHAR * args)
 	}
 }
 
-extern "C" __declspec(dllexport) void MirrorScroll(WCHAR * args)
+extern "C" __declspec(dllexport) void MirrorScroll(WCHAR *args)
 {
 	if (INT_ARGS)
 	{
@@ -347,14 +359,14 @@ extern "C" __declspec(dllexport) void MirrorScroll(WCHAR * args)
 	}
 }
 
-extern "C" __declspec(dllexport) void Mirror(WCHAR * args)
+extern "C" __declspec(dllexport) void Mirror(WCHAR *args)
 {
 	MirrorRing(args);
 	MirrorScroll(args);
 }
 
 // #define USE_XY
-extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
+extern "C" __declspec(dllexport) void SetMouseX(WCHAR *args)
 {
 	SpacePoint.Mouse.imag(INT_ARGS);
 #ifdef USE_XY
@@ -364,7 +376,7 @@ extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 #endif
 }
 
-extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
+extern "C" __declspec(dllexport) void SetMouseY(WCHAR *args)
 {
 	SpacePoint.Mouse.real(INT_ARGS);
 #ifdef USE_XY
@@ -374,7 +386,7 @@ extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 #endif
 }
 
-extern "C" __declspec(dllexport) void SetScroll(WCHAR * args)
+extern "C" __declspec(dllexport) void SetScroll(WCHAR *args)
 {
 	SpacePoint.Scroll =
 		(int)INT_ARGS * (SpacePoint.MirrorScroll ? -1 : 1)
@@ -388,7 +400,7 @@ extern "C" __declspec(dllexport) void SetScroll(WCHAR * args)
 /// For setting the speed of mouse / scroll events.
 /// </summary>
 /// <param name="args"></param>
-extern "C" __declspec(dllexport) void SetSpeed(WCHAR * args)
+extern "C" __declspec(dllexport) void SetSpeed(WCHAR *args)
 {
 	const UINT axisMax = 350;
 	double speed = 1 + (double)INT_ARGS / axisMax;
@@ -400,7 +412,7 @@ extern "C" __declspec(dllexport) void SetSpeed(WCHAR * args)
 	// m = (1-y)x^2 + y
 	SpacePoint.Speed = //(speed < 1) ?
 		(1 - minSpeed) * std::pow(speed, exponent) + minSpeed
-		//:
+	//:
 #if 0
 		(minSpeed - 1)
 		* std::pow(2 - speed, exponent)
@@ -416,10 +428,9 @@ extern "C" __declspec(dllexport) void SetSpeed(WCHAR * args)
 }
 
 // @brief Function generated by BingChat to find if p is between v1 and v2
-bool doubleInRange(double p, double v1, double v2) {
-	return v1 <= v2 ?
-		v1 <= p && p <= v2 :
-		v2 <= p && p <= v1;
+bool doubleInRange(double p, double v1, double v2)
+{
+	return v1 <= v2 ? v1 <= p && p <= v2 : v2 <= p && p <= v1;
 }
 
 #if 0
@@ -430,26 +441,11 @@ bool doubleInRange(double value, double minValue, double maxValue)
 }
 #endif
 
-
 void SelectButtonOnRing()
 {
-	enum class Octant
-	{
-		N,
-		NE,
-		E,
-		SE,
-		S,
-		SW,
-		W,
-		NW,
-	};
-	//Octant octant;
-
-
-	const UINT entryThreshold[3] = { 36, 150, 210 };
+	const UINT entryThreshold[3] = {45, 150, 240};
 	const double exitThreshold = 18;
-	const int cardinalAngle = 18, anglePadding = 3;
+	const int cardinalAngle = 20, anglePadding = 1;
 	const double compTolerance = 0.5;
 
 	double currentMagnitude = std::abs(SpacePoint.ButtonRing);
@@ -464,10 +460,10 @@ void SelectButtonOnRing()
 	{
 
 #if LOGFILE_ENABLED
-		FILE* fp;
+		FILE *fp;
 		if OPEN_LOGFILE_SUCCESSFUL
 		{
-			fwprintf(fp, L"Entry Stats: Current Magnitude: %4d, Prev Magnitude: %4d\n",
+			fwprintf(fp, L"ButtonRing: Entry Event: Current Magnitude: %4d, Prev Magnitude: %4d\n",
 					 (int)std::round(currentMagnitude),
 					 (int)std::round(prevMagnitude));
 			fclose(fp);
@@ -475,16 +471,15 @@ void SelectButtonOnRing()
 #endif
 		SpacePoint.ButtonEvent = SpacePoint.ButtonRing;
 		onEntry = true;
-
 	}
-	else if (currentMagnitude < exitThreshold) {
+	else if (currentMagnitude < exitThreshold)
+	{
 		onExit = true;
 	}
 
 	SpacePoint.PrevButtonRing = SpacePoint.ButtonRing;
 
-	/// Dealing with an event 
-
+	/// Dealing with an event
 	double triggerMagnitude = std::abs(SpacePoint.ButtonEvent);
 	if (triggerMagnitude != 0) // A trigger point has been obtained
 	{
@@ -493,350 +488,336 @@ void SelectButtonOnRing()
 		double angle = toDegrees * std::arg(SpacePoint.ButtonEvent);
 		const int a = anglePadding, b = cardinalAngle, c = 90 - b;
 
-
-		// Ordered clockwise from south
 		if (doubleInRange(angle, 180 - b / 2 + a, 180) ||
 			doubleInRange(angle, -180, -180 + b / 2 - a))
-		{
-			// octant = Octant::S;
-			if (isEdge) {
+		{ // South
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: South Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: South Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer South: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer South: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer South: Down\n");
-
+					LogMessage((wchar_t *)L"ButtonRing: Outer South: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: South: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: South: Down\n");
 				}
 			}
 		}
 		else if (doubleInRange(angle, -135 - c / 2 + a, -135 + c / 2 - a))
-		{
-			//octant = Octant::SW;
-			if (isEdge) {
+		{ // South-west
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-west Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-west Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-west Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-west Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer South-west: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer South-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer South-west: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer South-west: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-west: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-west: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-west: Down\n");
 				}
 			}
 		}
 		else if (doubleInRange(angle, -90 - b / 2 + a, -90 + b / 2 - a))
-		{
-			//octant = Octant::W;
-			if (isEdge) {
+		{ // West
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: West Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: West Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: West Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: West Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer West: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer West: Up\n");
 					SendMouseEvent(MouseEvent::right, 0);
-
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer West: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer West: Down\n");
 					SendMouseEvent(MouseEvent::right, 1);
-
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: West: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: West: Up\n");
 					SendMouseEvent(MouseEvent::left, 0);
-
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: West: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: West: Down\n");
 					SendMouseEvent(MouseEvent::left, 1);
-
 				}
 			}
 		}
 		else if (doubleInRange(angle, -45 - c / 2 + a, -45 + c / 2 - a))
-		{
-			//octant = Octant::NW;
-			if (isEdge) {
+		{ // North-west
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-west Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-west Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-west Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-west Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer North-west: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer North-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer North-west: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer North-west: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-west: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-west: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-west: Down\n");
 				}
 			}
 		}
 		else if (doubleInRange(angle, 0 - b / 2 + a, 0 + b / 2 - a))
-		{
-			//octant = Octant::N;
-			if (isEdge) {
+		{ // North
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: North Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: North Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer North: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer North: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer North: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer North: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: North: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: North: Down\n");
 				}
 			}
 		}
 		else if (doubleInRange(angle, 45 - c / 2 + a, 45 + c / 2 - a))
-		{
-			//octant = Octant::NE;
-			if (isEdge) {
+		{ // North East
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-east Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-east Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-east Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-east Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer North-east: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer North-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer North-east: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer North-east: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-east: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: North-east: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: North-east: Down\n");
 				}
 			}
 		}
 		else if (doubleInRange(angle, 90 - b / 2 + a, 90 + b / 2 - a))
-		{
-			//octant = Octant::E;
-			if (isEdge) {
+		{ // East
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: East Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: East Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: East Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: East Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer East: Up\n");
-					Mirror((WCHAR*)L" 1");
+					LogMessage((wchar_t *)L"ButtonRing: Outer East: Up\n");
+					Mirror((WCHAR *)L" 1");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer East: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer East: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: East: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: East: Up\n");
 					SendMouseEvent(MouseEvent::middle, 0);
-
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: East: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: East: Down\n");
 					SendMouseEvent(MouseEvent::middle, 1);
-
 				}
 			}
 		}
 		else if (doubleInRange(angle, 135 - c / 2 + a, 135 + c / 2 - a))
-		{
-			//octant = Octant::SE;
-			if (isEdge) {
+		{ // South-east
+			if (isEdge)
+			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-east Edge: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-east Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-east Edge: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-east Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer South-east: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer South-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: Outer South-east: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: Outer South-east: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-east: Up\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t*)L"ButtonRing: South-east: Down\n");
+					LogMessage((wchar_t *)L"ButtonRing: South-east: Down\n");
 				}
 			}
 		}
-		else // Likely padding gap.
-		{
+		else
+		{ // Gap between boundaries
 			onExit = true;
 #if LOGFILE_ENABLED
-			FILE* fp;
+			FILE *fp;
 			if OPEN_LOGFILE_SUCCESSFUL
 			{
-				fwprintf(fp, L"Trigger Gap Event: %4d ∠ %-4d\n",
+				fwprintf(fp, L"ButtonRing: Gap: %4d ∠ %-4d\n",
 						 (int)std::abs(SpacePoint.ButtonEvent),
 						 (int)std::round(toDegrees * std::arg(SpacePoint.ButtonEvent)));
 				fclose(fp);
 			}
 #endif
 		}
-		// Commands to execute at the end, no matter the ButtonRing angle, 
-		// instead of having to copy/paste these lines 8 times over. It's like
-		// end GCODEs in 3D printing.
 		if (onExit)
 		{
 			// Reset variables
 			SpacePoint.ButtonEvent = (0.0, 0.0);
 		}
 	}
-
 }
 
-
-extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
+extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR *args)
 {
 	// Get string that starts with ' ' -> convert to int -> set complex number
 	SpacePoint.ButtonRing.real(INT_ARGS);
-	LogButtonRingEvent(0);
+	// LogButtonRingEvent(0);
 
 	SelectButtonOnRing();
 }
-extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
+extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR *args)
 {
 	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
-	LogButtonRingEvent(1);
+	// LogButtonRingEvent(1);
 
 	SelectButtonOnRing();
 }
@@ -845,7 +826,7 @@ extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
 /// Mainly for testing / debug purposes.
 /// </summary>
 /// <param name="args"></param>
-extern "C" __declspec(dllexport) void SetButtonRing(WCHAR * args)
+extern "C" __declspec(dllexport) void SetButtonRing(WCHAR *args)
 {
 	if (wcsstr(args, L"_Rx") != NULL || wcsstr(args, L"_Y") != NULL)
 	{
