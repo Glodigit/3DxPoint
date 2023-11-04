@@ -11,6 +11,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <complex>
+#include <future>
 #define LOGFILE_ENABLED (true)
 #if LOGFILE_ENABLED
 #include <string>
@@ -443,6 +444,8 @@ bool doubleInRange(double value, double minValue, double maxValue)
 
 void SelectButtonOnRing()
 {
+	static bool passedThreshold[3] = { false, false, false };
+
 	const UINT entryThreshold[3] = {45, 150, 240};
 	const double exitThreshold = 18;
 	const int cardinalAngle = 20, anglePadding = 1;
@@ -476,6 +479,17 @@ void SelectButtonOnRing()
 	{
 		onExit = true;
 	}
+	else if (std::abs(SpacePoint.ButtonEvent) == 0.0) {
+		if (!passedThreshold[0] && currentMagnitude >= entryThreshold[0]) {
+			Beep(294, 125); passedThreshold[0] = true;
+		}
+		else if (!passedThreshold[1] && currentMagnitude >= entryThreshold[1]) {
+			Beep(330, 125); passedThreshold[1] = true;
+		}
+		else if (!passedThreshold[2] && currentMagnitude >= entryThreshold[2]) {
+			Beep(392, 125); passedThreshold[2] = true;
+		}
+	}
 
 	SpacePoint.PrevButtonRing = SpacePoint.ButtonRing;
 
@@ -485,6 +499,7 @@ void SelectButtonOnRing()
 	{
 		bool isEdge = (triggerMagnitude >= entryThreshold[2]);
 		bool isOuter = (triggerMagnitude >= entryThreshold[1]);
+		bool inGap = false;
 		double angle = toDegrees * std::arg(SpacePoint.ButtonEvent);
 		const int a = anglePadding, b = cardinalAngle, c = 90 - b;
 
@@ -786,6 +801,7 @@ void SelectButtonOnRing()
 		}
 		else
 		{ // Gap between boundaries
+			inGap = true;
 			onExit = true;
 #if LOGFILE_ENABLED
 			FILE *fp;
@@ -800,8 +816,12 @@ void SelectButtonOnRing()
 		}
 		if (onExit)
 		{
+			if (!inGap) Beep(264, 125);
 			// Reset variables
 			SpacePoint.ButtonEvent = (0.0, 0.0);
+			for (int i = 0; i < 3; i++) {
+				passedThreshold[i] = false;
+			}
 		}
 	}
 }
