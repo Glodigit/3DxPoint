@@ -816,12 +816,15 @@ void SelectButtonOnRing()
 		}
 		if (onExit)
 		{
-			if (!inGap) Beep(264, 125);
+			if (!inGap) {
+				Beep(264, 125);
+				for (int i = 0; i < 3; i++) {
+					passedThreshold[i] = false;
+				}
+			}
 			// Reset variables
 			SpacePoint.ButtonEvent = (0.0, 0.0);
-			for (int i = 0; i < 3; i++) {
-				passedThreshold[i] = false;
-			}
+			
 		}
 	}
 }
