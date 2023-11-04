@@ -11,7 +11,7 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <complex>
-#define LOGFILE_ENABLED (true)
+#define LOGFILE_ENABLED (false)
 #if LOGFILE_ENABLED
 #include <string>
 #endif
@@ -447,9 +447,9 @@ void SelectButtonOnRing()
 	//Octant octant;
 
 
-	const UINT entryThreshold[3] = { 36, 108, 210 };
-	const double exitThreshold = 15;
-	const int cardinalAngle = 20, anglePadding = 3;
+	const UINT entryThreshold[3] = { 36, 150, 210 };
+	const double exitThreshold = 18;
+	const int cardinalAngle = 18, anglePadding = 3;
 	const double compTolerance = 0.5;
 
 	double currentMagnitude = std::abs(SpacePoint.ButtonRing);
