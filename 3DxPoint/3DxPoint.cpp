@@ -66,7 +66,6 @@ typedef struct UdCfgDLLProcessInfo
 } UdCfgDLLProcessInfo;
 #endif
 
-// static WCHAR logBuffer[100];
 
 // DLL Initialization function.
 // This gives you a chance to do any one time initialization immediately after this DLL is loaded.
