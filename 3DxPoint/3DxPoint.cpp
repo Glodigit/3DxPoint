@@ -16,12 +16,24 @@
 #if LOGFILE_ENABLED
 #include <string>
 #endif
+#pragma comment(lib,"winmm.lib")
+#include "mmsystem.h"
 
-#define TXT_PATH L"C:\\Log 3DxPoint\\3DxPoint.txt"
+#define LOG_PATH L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\3DxPoint.txt"
+#if 1 // Change to 0 to mute
+#define NOTE_C_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato C.wav"
+#define NOTE_D_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato D.wav"
+#define NOTE_E_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato E.wav"
+#define NOTE_G_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato G.wav"
+#endif
+
 // #define TXT_PATH L"C:\\Users\\[PUT_USERNAME_HERE]\\source\\repos\\3DxPoint\\3DxPoint\\3DxPoint.txt"
-#define OPEN_LOGFILE_SUCCESSFUL (_wfopen_s(&fp, TXT_PATH, L"a,ccs=UTF-8") == 0 && fp != NULL)
+#define OPEN_LOGFILE_SUCCESSFUL (_wfopen_s(&fp, LOG_PATH, L"a,ccs=UTF-8") == 0 && fp != NULL)
 #define INT_ARGS _wtoi(wcsrchr(args, L' '))
 //		read like (int)*args
+
+
+
 
 enum class PC
 {
@@ -481,13 +493,16 @@ void SelectButtonOnRing()
 	}
 	else if (std::abs(SpacePoint.ButtonEvent) == 0.0) {
 		if (!passedThreshold[0] && currentMagnitude >= entryThreshold[0]) {
-			Beep(294, 125); passedThreshold[0] = true;
+			PlaySound(NOTE_D_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			passedThreshold[0] = true;
 		}
 		else if (!passedThreshold[1] && currentMagnitude >= entryThreshold[1]) {
-			Beep(330, 125); passedThreshold[1] = true;
+			PlaySound(NOTE_E_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			passedThreshold[1] = true;
 		}
 		else if (!passedThreshold[2] && currentMagnitude >= entryThreshold[2]) {
-			Beep(392, 125); passedThreshold[2] = true;
+			PlaySound(NOTE_G_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			passedThreshold[2] = true;
 		}
 	}
 
@@ -817,14 +832,12 @@ void SelectButtonOnRing()
 		if (onExit)
 		{
 			if (!inGap) {
-				Beep(264, 125);
+				PlaySound(NOTE_C_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
 				for (int i = 0; i < 3; i++) {
 					passedThreshold[i] = false;
 				}
 			}
-			// Reset variables
-			SpacePoint.ButtonEvent = (0.0, 0.0);
-			
+			SpacePoint.ButtonEvent = (0.0, 0.0);			
 		}
 	}
 }
