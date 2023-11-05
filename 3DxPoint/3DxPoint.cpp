@@ -12,7 +12,7 @@
 #include "stdio.h"
 #include <complex>
 #include <future>
-#define LOGFILE_ENABLED (true)
+#define LOGFILE_ENABLED (false)
 #if LOGFILE_ENABLED
 #include <string>
 #endif
@@ -458,17 +458,17 @@ void SelectButtonOnRing()
 {
 	static bool passedThreshold[3] = { false, false, false };
 
-	const UINT entryThreshold[3] = {45, 150, 240};
+	const UINT entryThreshold[3] = {45, 135, 270};
 	const double exitThreshold = 18;
 	const int cardinalAngle = 20, anglePadding = 1;
-	const double compTolerance = 0.5;
+	const double triggerDifference = 2; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
 
 	double currentMagnitude = std::abs(SpacePoint.ButtonRing);
 	double prevMagnitude = std::abs(SpacePoint.PrevButtonRing);
 	bool onEntry = false, onExit = false;
 
 	/// Rising / falling edge of Schmitt trigger
-	if (currentMagnitude + compTolerance < prevMagnitude &&
+	if (currentMagnitude < prevMagnitude + triggerDifference &&
 		currentMagnitude > exitThreshold &&
 		prevMagnitude >= entryThreshold[0] &&
 		std::abs(SpacePoint.ButtonEvent) == 0.0)
