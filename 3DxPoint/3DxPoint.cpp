@@ -34,7 +34,7 @@
 
 typedef enum class PC
 {
-	none,
+	Minimal,
 	Typical, // Mainly keyboard shortcuts that would be seen as standard
 	// Add / rename PC names / identifiers below
 	Computer1,
@@ -352,14 +352,23 @@ int main() {
 #define KBSETUP ZeroMemory(k, sizeof(k)); for (int i = 0; i < ARRAYSIZE(k); i++)  {k[i].type = INPUT_KEYBOARD; }
 #define KBSEND if(SendInput(ARRAYSIZE(k), k, sizeof(INPUT)) != ARRAYSIZE(k))
 
+void TapKey(UINT8 virtualKey) {
+	INPUT k[2] = {};
+	KBSETUP;
+	k[0].KB virtualKey;
+	k[1].KBUP; k[1].KB virtualKey;
+	KBSEND
+	{
+		//LogMessage((wchar_t*)L"Keyboard SendInput Error.\n");
+	}
+}
+
 /// <summary>
 /// A keyboard shortcut for snipping a section of the screen.
 /// </summary>
 /// <param name="pc">Optional override to the main PC selection.</param>
 void Shortcut_Snip(PC pc = PC_Select) {
-
-	if (pc == PC::none) {}
-	else if (pc == PC::Typical)
+	if (pc == PC::Typical)
 	{// Win + Shift + S (Snip + Sketch)
 		INPUT k[6] = {};
 		KBSETUP;
@@ -369,10 +378,7 @@ void Shortcut_Snip(PC pc = PC_Select) {
 		k[3].KBUP; k[3].KB 'S';
 		k[4].KBUP; k[4].KB VK_LSHIFT;
 		k[5].KBUP; k[5].KB VK_LWIN;
-		KBSEND
-		{
-			//LogMessage((wchar_t*)L"Shortcut_Snip Error.\n");
-		}
+		KBSEND{}
 	}
 	else if (pc == PC::Computer1)
 	{// LCtrl + UK-Grave '`'
@@ -395,6 +401,46 @@ void Shortcut_Snip(PC pc = PC_Select) {
 		KBSEND{}
 	}
 }
+
+void Shortcut_BrowserCloseTab(PC pc = PC_Select) {
+	INPUT k[4] = {};
+	KBSETUP;
+	k[0].KB VK_LCONTROL;
+	k[1].KB 'W';
+	k[2].KBUP; k[2].KB 'W';
+	k[3].KBUP; k[3].KB VK_LCONTROL;
+	KBSEND{}
+}
+
+void Shortcut_BrowserNextTab(PC pc = PC_Select) {
+	if (pc == PC::Minimal || pc == PC::Typical || pc==PC::Computer2) {
+		INPUT k[4] = {};
+		KBSETUP;
+		k[0].KB VK_LCONTROL;
+		k[1].KB VK_TAB;
+		k[2].KBUP; k[2].KB VK_TAB;
+		k[3].KBUP; k[3].KB VK_LCONTROL;
+		KBSEND{}
+	}
+	else if (pc == PC::Computer1) { TapKey(VK_F9); }
+}
+
+void Shortcut_BrowserPrevTab(PC pc = PC_Select) {
+	if (pc == PC::Minimal || pc == PC::Typical || pc == PC::Computer2) {
+		INPUT k[6] = {};
+		KBSETUP;
+		k[0].KB VK_LCONTROL;
+		k[1].KB VK_LSHIFT;
+		k[2].KB VK_TAB;
+		k[3].KBUP; k[3].KB VK_TAB;
+		k[4].KBUP; k[4].KB VK_LSHIFT;
+		k[5].KBUP; k[5].KB VK_LCONTROL;
+		KBSEND{}
+	}
+	else if (pc == PC::Computer1) { TapKey(VK_F8); }
+}
+
+
 
 #endif
 #endif
@@ -505,8 +551,8 @@ void SelectButtonOnRing()
 {
 	static bool passedThreshold[3] = { false, false, false };
 
-	const UINT entryThreshold[3] = { 45, 135, 270 };
-	const double exitThreshold = 18;
+	const UINT entryThreshold[3] = { 40, 108, 200 };
+	const double exitThreshold = 10;
 	const int cardinalAngle = 20, anglePadding = 1;
 	const double triggerDifference = 2; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
 	const bool soundOnTrigger = true; // false = sound when threshold passed
@@ -532,7 +578,7 @@ void SelectButtonOnRing()
 			fclose(fp);
 		}
 #endif
-		SpacePoint.ButtonEvent = SpacePoint.ButtonRing;
+		SpacePoint.ButtonEvent = SpacePoint.PrevButtonRing;
 		onEntry = true;
 	}
 	else if (currentMagnitude < exitThreshold)
@@ -626,6 +672,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer South-west: Down\n");
+					Shortcut_BrowserPrevTab();
 				}
 			}
 			else
@@ -637,6 +684,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: South-west: Down\n");
+					TapKey(VK_BROWSER_BACK);
 				}
 			}
 		}
@@ -763,6 +811,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: North-east Edge: Down\n");
+					Shortcut_BrowserCloseTab();
 				}
 			}
 			else if (isOuter)
@@ -774,6 +823,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer North-east: Down\n");
+					Shortcut_BrowserNextTab();
 				}
 			}
 			else
@@ -785,6 +835,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: North-east: Down\n");
+					TapKey(VK_BROWSER_FORWARD);
 				}
 			}
 		}
@@ -898,14 +949,14 @@ extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
 {
 	// Get string that starts with ' ' -> convert to int -> set complex number
 	SpacePoint.ButtonRing.real(INT_ARGS);
-	// LogButtonRingEvent(0);
+	//LogButtonRingEvent(0);
 
 	SelectButtonOnRing();
 }
 extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
 {
 	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
-	// LogButtonRingEvent(1);
+	//LogButtonRingEvent(1);
 
 	SelectButtonOnRing();
 }
@@ -961,6 +1012,6 @@ void SendSingleKey(WORD wVk, bool pressed)
 		::LogMessageEx(LogLevelErrors, _T("SendModifierkey: NO Error from SendInput sending key %d %s\n"), wVk, bReleased ? L"release" : L"press");
 	}
 #endif
-	}
+}
 #endif
 #endif
