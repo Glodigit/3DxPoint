@@ -460,6 +460,7 @@ void SelectButtonOnRing()
 	const double exitThreshold = 18;
 	const int cardinalAngle = 20, anglePadding = 1;
 	const double triggerDifference = 2; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
+	const bool soundOnTrigger = true; // false = sound when threshold passed
 
 	double currentMagnitude = std::abs(SpacePoint.ButtonRing);
 	double prevMagnitude = std::abs(SpacePoint.PrevButtonRing);
@@ -491,15 +492,15 @@ void SelectButtonOnRing()
 	}
 	else if (std::abs(SpacePoint.ButtonEvent) == 0.0) {
 		if (!passedThreshold[0] && currentMagnitude >= entryThreshold[0]) {
-			PlaySound(NOTE_D_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			if (!soundOnTrigger) PlaySound(NOTE_D_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
 			passedThreshold[0] = true;
 		}
 		else if (!passedThreshold[1] && currentMagnitude >= entryThreshold[1]) {
-			PlaySound(NOTE_E_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			if (!soundOnTrigger) PlaySound(NOTE_E_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
 			passedThreshold[1] = true;
 		}
 		else if (!passedThreshold[2] && currentMagnitude >= entryThreshold[2]) {
-			PlaySound(NOTE_G_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			if (!soundOnTrigger) PlaySound(NOTE_G_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
 			passedThreshold[2] = true;
 		}
 	}
@@ -830,13 +831,16 @@ void SelectButtonOnRing()
 		}
 		if (onExit)
 		{
+			SpacePoint.ButtonEvent = (0.0, 0.0);
 			if (!inGap) {
 				PlaySound(NOTE_C_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
-				for (int i = 0; i < 3; i++) {
-					passedThreshold[i] = false;
-				}
+				for (int i = 0; i < 3; i++) passedThreshold[i] = false;
 			}
-			SpacePoint.ButtonEvent = (0.0, 0.0);
+		}
+		else if (onEntry) {
+			if (isEdge && soundOnTrigger) PlaySound(NOTE_G_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			else if (isOuter && soundOnTrigger) PlaySound(NOTE_E_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
+			else if (soundOnTrigger) PlaySound(NOTE_D_PATH, NULL, SND_FILENAME | SND_ASYNC | SND_NODEFAULT);
 		}
 	}
 }
