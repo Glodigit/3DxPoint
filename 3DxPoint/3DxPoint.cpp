@@ -32,22 +32,19 @@
 #define INT_ARGS _wtoi(wcsrchr(args, L' '))
 //		read like (int)*args
 
-
-
-
-enum class PC
+typedef enum class PC
 {
 	none,
 	Typical, // Mainly keyboard shortcuts that would be seen as standard
 	// Add / rename PC names / identifiers below
-	Teti,
-	Q3ti
+	Computer1,
+	Computer2
 };
 /// <summary>
 /// The PC to create the DLL for.
 /// Usually used to compile different virtual buttons for different PCs.
 /// </summary>
-const PC PC_Select = PC::Teti;
+constexpr PC PC_Select = PC::Computer1;
 
 // Angle conversions
 const double pi = std::acos(-1);
@@ -57,6 +54,8 @@ const double toDegrees = 180.0 / pi;
 typedef struct SpaceState
 {
 	std::complex<double> Mouse; // In the form y + x i
+	std::complex<double> PrevMouse;
+	bool BounceBack;
 	int Scroll{};
 	double Speed = 1;
 	std::complex<double> ButtonRing;
@@ -322,28 +321,78 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 }
 
 /// Shortcuts
-//  https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes 
 #if 1
+
+/* Use https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes or run the below code that
+	BingChat generated in a new C++ Console App project.
+
+#include <iostream>
+#include <windows.h>
+int main() {
+	while (true) {
+		for (int i = 1; i < 256; i++) {
+			if (GetAsyncKeyState(i) & 0x8000) {
+				std::cout << "Virtual key code: " << i << std::endl;
+				Sleep(500); // Wait for 500 milliseconds
+				if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
+					return 0; // Exit the program if the Escape key is held
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+*/
+//   
+
 // Macros to make writing these shortcut macros faster / more concise
 #define KB ki.wVk =// Key Button
 #define KBUP ki.dwFlags = KEYEVENTF_KEYUP
-#define KBSETUP ZeroMemory(k, sizeof(k)); for (int i = 0; i < ARRAYSIZE(k); i++) { k[i].type = INPUT_KEYBOARD; }
+#define KBSETUP ZeroMemory(k, sizeof(k)); for (int i = 0; i < ARRAYSIZE(k); i++)  {k[i].type = INPUT_KEYBOARD; }
 #define KBSEND if(SendInput(ARRAYSIZE(k), k, sizeof(INPUT)) != ARRAYSIZE(k))
-void Shortcut_Snip(void) {
-	switch (PC_Select) {
-	case PC::Teti:
-		INPUT k[4] = {};
-		KBSETUP
-		k[0].KB VK_LCONTROL;
-		k[1].KB VK_OEM_3;
-		k[2].KBUP; k[2].KB VK_OEM_3;
-		k[3].KBUP; k[3].KB VK_LCONTROL;
+
+/// <summary>
+/// A keyboard shortcut for snipping a section of the screen.
+/// </summary>
+/// <param name="pc">Optional override to the main PC selection.</param>
+void Shortcut_Snip(PC pc = PC_Select) {
+
+	if (pc == PC::none) {}
+	else if (pc == PC::Typical)
+	{// Win + Shift + S (Snip + Sketch)
+		INPUT k[6] = {};
+		KBSETUP;
+		k[0].KB VK_LWIN;
+		k[1].KB VK_LSHIFT;
+		k[2].KB 'S';
+		k[3].KBUP; k[3].KB 'S';
+		k[4].KBUP; k[4].KB VK_LSHIFT;
+		k[5].KBUP; k[5].KB VK_LWIN;
 		KBSEND
 		{
-			LogMessage((wchar_t*)L"Shortcut_Snip Error.\n");
+			//LogMessage((wchar_t*)L"Shortcut_Snip Error.\n");
 		}
-			
-		break;
+	}
+	else if (pc == PC::Computer1)
+	{// LCtrl + UK-Grave '`'
+		INPUT k[4] = {};
+		KBSETUP;
+		k[0].KB VK_LCONTROL;
+		k[1].KB VK_OEM_8;
+		k[2].KBUP; k[2].KB VK_OEM_8;
+		k[3].KBUP; k[3].KB VK_LCONTROL;
+		KBSEND{}
+	}
+	else if (pc == PC::Computer2)
+	{// RCtrl + ForwardSlash
+		INPUT k[4] = {};
+		KBSETUP;
+		k[0].KB VK_RCONTROL;
+		k[1].KB VK_OEM_2;
+		k[2].KBUP; k[2].KB VK_OEM_2;
+		k[3].KBUP; k[3].KB VK_RCONTROL;
+		KBSEND{}
 	}
 }
 
@@ -912,6 +961,6 @@ void SendSingleKey(WORD wVk, bool pressed)
 		::LogMessageEx(LogLevelErrors, _T("SendModifierkey: NO Error from SendInput sending key %d %s\n"), wVk, bReleased ? L"release" : L"press");
 	}
 #endif
-}
+	}
 #endif
 #endif
