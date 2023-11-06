@@ -12,7 +12,7 @@
 #include "stdio.h"
 #include <complex>
 #include <future>
-#define LOGFILE_ENABLED (false)
+#define LOGFILE_ENABLED (true)
 #if LOGFILE_ENABLED
 #include <string>
 #endif
@@ -27,7 +27,7 @@
 #define NOTE_G_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato G.wav"
 #endif
 
-// #define TXT_PATH L"C:\\Users\\[PUT_USERNAME_HERE]\\source\\repos\\3DxPoint\\3DxPoint\\3DxPoint.txt"
+	// #define TXT_PATH L"C:\\Users\\[PUT_USERNAME_HERE]\\source\\repos\\3DxPoint\\3DxPoint\\3DxPoint.txt"
 #define OPEN_LOGFILE_SUCCESSFUL (_wfopen_s(&fp, LOG_PATH, L"a,ccs=UTF-8") == 0 && fp != NULL)
 #define INT_ARGS _wtoi(wcsrchr(args, L' '))
 //		read like (int)*args
@@ -38,6 +38,7 @@
 enum class PC
 {
 	none,
+	Typical, // Mainly keyboard shortcuts that would be seen as standard
 	// Add / rename PC names / identifiers below
 	Teti,
 	Q3ti
@@ -99,12 +100,12 @@ typedef struct UdCfgDLLProcessInfo
 extern "C" __declspec(dllexport) LRESULT DllInit(LPVOID lpReserved)
 {
 #if LOGFILE_ENABLED
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 
 #ifdef LOG_PROCESSINFO
-		UdCfgDLLProcessInfo *pInfo = (UdCfgDLLProcessInfo *)lpReserved;
+		UdCfgDLLProcessInfo * pInfo = (UdCfgDLLProcessInfo*)lpReserved;
 		fwprintf(fp, L"DllInit: ProcessInfo: size=%d, type=%d, pid=%d, syncID=%d, exeName=%s\n", pInfo->size, pInfo->processInfoType, pInfo->pid, pInfo->syncID, pInfo->exeName);
 #else
 		fwprintf(fp, L"DllInit called\n");
@@ -123,12 +124,12 @@ extern "C" __declspec(dllexport) LRESULT DllInit(LPVOID lpReserved)
 extern "C" __declspec(dllexport) LRESULT DllExit(LPVOID lpReserved)
 {
 #if LOGFILE_ENABLED
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 
 #ifdef LOG_PROCESSINFO
-		UdCfgDLLProcessInfo *pInfo = (UdCfgDLLProcessInfo *)lpReserved;
+		UdCfgDLLProcessInfo * pInfo = (UdCfgDLLProcessInfo*)lpReserved;
 		fwprintf(fp, L"DllExit: ProcessInfo: size=%d, type=%d, pid=%d, exeName=%s\n", pInfo->size, pInfo->processInfoType, pInfo->pid, pInfo->exeName);
 #else
 		fwprintf(fp, L"DllExit called\n");
@@ -143,10 +144,10 @@ extern "C" __declspec(dllexport) LRESULT DllExit(LPVOID lpReserved)
 
 /// Logging functions/exports
 #if 1
-void LogMessage(wchar_t *s)
+void LogMessage(wchar_t* s)
 {
 #if LOGFILE_ENABLED
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, s);
@@ -159,7 +160,7 @@ void LogMessage(wchar_t *s)
 void LogButtonRingEvent(bool realOrImag)
 {
 #if LOGFILE_ENABLED
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"ButtonRing: %s Event: %4d ∠ %-4d  (%-4d + %4d i)\n",
@@ -178,7 +179,7 @@ void LogButtonRingEvent(bool realOrImag)
 void LogMirrorEvent(bool scrollOrRing)
 {
 #if LOGFILE_ENABLED
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Mirror %s Event: %d\n",
@@ -192,7 +193,7 @@ void LogMirrorEvent(bool scrollOrRing)
 void LogSpeedEvent()
 {
 #if LOGFILE_ENABLED
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Speed Multiplier Event: %f\n", SpacePoint.Speed);
@@ -202,10 +203,10 @@ void LogSpeedEvent()
 }
 
 // This is an example of an exported function.
-extern "C" __declspec(dllexport) void LogAxis(WCHAR *args)
+extern "C" __declspec(dllexport) void LogAxis(WCHAR * args)
 {
 #if LOGFILE_ENABLED
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Axis Event: %s\n", args);
@@ -214,12 +215,12 @@ extern "C" __declspec(dllexport) void LogAxis(WCHAR *args)
 #endif
 }
 
-extern "C" __declspec(dllexport) void LogButton(WCHAR *args)
+extern "C" __declspec(dllexport) void LogButton(WCHAR * args)
 {
 #if LOGFILE_ENABLED
 	static int logButtonCount = 0;
 	logButtonCount++;
-	FILE *fp;
+	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Button Event %d: %s\n", logButtonCount, args);
@@ -272,15 +273,16 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 		input.mi.dx = (long)std::round(SpacePoint.Mouse.imag() * SpacePoint.Speed);
 		input.mi.dy = (long)std::round(SpacePoint.Mouse.real() * SpacePoint.Speed);
 		break;
+		//default: return;
 	}
 	/*	This doesn't work if the window under the cursor is running as admin,
 		but 3DxService is not run as admin! */
-	status = ::SendInput(nInputs, &input, sizeof(INPUT));
+	status = SendInput(nInputs, &input, sizeof(INPUT));
 
 	if (status != nInputs)
 	{
 #if LOGFILE_ENABLED
-		FILE *fp;
+		FILE* fp;
 		if OPEN_LOGFILE_SUCCESSFUL
 		{
 			DWORD error = GetLastError();
@@ -312,49 +314,45 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 				eventName = "Unknown";
 				break;
 			}
-			fwprintf(fp, L"%s SendInput Error = 0x%x\n", (wchar_t *)eventName.c_str(), error);
+			fwprintf(fp, L"%s SendInput Error = 0x%x\n", (wchar_t*)eventName.c_str(), error);
 			fclose(fp);
 		}
 #endif
 	}
 }
 
-void SendModifierKey(WORD wVk, bool pressed)
-{
-	UINT status;
-	INPUT input;
-	const UINT nInputs = 1;
-
-	ZeroMemory(&input, sizeof(INPUT));
-
-	input.type = INPUT_KEYBOARD;
-	input.ki.wVk = wVk;
-	input.ki.wScan = 0;
-	input.ki.dwFlags = pressed ? 0 : KEYEVENTF_KEYUP;
-	input.ki.time = 0;
-	input.ki.dwExtraInfo = NULL; // hopefully don't need this
-
-	status = ::SendInput(nInputs, &input, sizeof(INPUT));
-
-#if 0 // This seems like an easy way to toggle bits of code on and off without having to comment it out
-	if (status != nInputs)
-	{
-		DWORD error = GetLastError();
-		//::LogMessageEx(LogLevelErrors, _T("SendModifierkey: Error %d from SendInput sending key %d\n"), error, wVk);
+/// Shortcuts
+//  https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes 
+#if 1
+// Macros to make writing these shortcut macros faster / more concise
+#define KB ki.wVk =// Key Button
+#define KBUP ki.dwFlags = KEYEVENTF_KEYUP
+#define KBSETUP ZeroMemory(k, sizeof(k)); for (int i = 0; i < ARRAYSIZE(k); i++) { k[i].type = INPUT_KEYBOARD; }
+#define KBSEND if(SendInput(ARRAYSIZE(k), k, sizeof(INPUT)) != ARRAYSIZE(k))
+void Shortcut_Snip(void) {
+	switch (PC_Select) {
+	case PC::Teti:
+		INPUT k[4] = {};
+		KBSETUP
+		k[0].KB VK_LCONTROL;
+		k[1].KB VK_OEM_3;
+		k[2].KBUP; k[2].KB VK_OEM_3;
+		k[3].KBUP; k[3].KB VK_LCONTROL;
+		KBSEND
+		{
+			LogMessage((wchar_t*)L"Shortcut_Snip Error.\n");
+		}
+			
+		break;
 	}
-
-	else
-	{
-		::LogMessageEx(LogLevelErrors, _T("SendModifierkey: NO Error from SendInput sending key %d %s\n"), wVk, bReleased ? L"release" : L"press");
-	}
-#endif
 }
 
+#endif
 #endif
 
 /// Set SpacePoint functions / exports
 void SelectButtonOnRing(void);
-extern "C" __declspec(dllexport) void MirrorRing(WCHAR *args)
+extern "C" __declspec(dllexport) void MirrorRing(WCHAR * args)
 {
 	if (INT_ARGS)
 	{
@@ -363,7 +361,7 @@ extern "C" __declspec(dllexport) void MirrorRing(WCHAR *args)
 	}
 }
 
-extern "C" __declspec(dllexport) void MirrorScroll(WCHAR *args)
+extern "C" __declspec(dllexport) void MirrorScroll(WCHAR * args)
 {
 	if (INT_ARGS)
 	{
@@ -372,14 +370,14 @@ extern "C" __declspec(dllexport) void MirrorScroll(WCHAR *args)
 	}
 }
 
-extern "C" __declspec(dllexport) void Mirror(WCHAR *args)
+extern "C" __declspec(dllexport) void Mirror(WCHAR * args)
 {
 	MirrorRing(args);
 	MirrorScroll(args);
 }
 
 // #define USE_XY
-extern "C" __declspec(dllexport) void SetMouseX(WCHAR *args)
+extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 {
 	SpacePoint.Mouse.imag(INT_ARGS);
 #ifdef USE_XY
@@ -389,7 +387,7 @@ extern "C" __declspec(dllexport) void SetMouseX(WCHAR *args)
 #endif
 }
 
-extern "C" __declspec(dllexport) void SetMouseY(WCHAR *args)
+extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 {
 	SpacePoint.Mouse.real(INT_ARGS);
 #ifdef USE_XY
@@ -399,7 +397,7 @@ extern "C" __declspec(dllexport) void SetMouseY(WCHAR *args)
 #endif
 }
 
-extern "C" __declspec(dllexport) void SetScroll(WCHAR *args)
+extern "C" __declspec(dllexport) void SetScroll(WCHAR * args)
 {
 	SpacePoint.Scroll =
 		(int)INT_ARGS * (SpacePoint.MirrorScroll ? -1 : 1)
@@ -413,7 +411,7 @@ extern "C" __declspec(dllexport) void SetScroll(WCHAR *args)
 /// For setting the speed of mouse / scroll events.
 /// </summary>
 /// <param name="args"></param>
-extern "C" __declspec(dllexport) void SetSpeed(WCHAR *args)
+extern "C" __declspec(dllexport) void SetSpeed(WCHAR * args)
 {
 	const UINT axisMax = 350;
 	double speed = 1 + (double)INT_ARGS / axisMax;
@@ -425,7 +423,7 @@ extern "C" __declspec(dllexport) void SetSpeed(WCHAR *args)
 	// m = (1-y)x^2 + y
 	SpacePoint.Speed = //(speed < 1) ?
 		(1 - minSpeed) * std::pow(speed, exponent) + minSpeed
-	//:
+		//:
 #if 0
 		(minSpeed - 1)
 		* std::pow(2 - speed, exponent)
@@ -458,7 +456,7 @@ void SelectButtonOnRing()
 {
 	static bool passedThreshold[3] = { false, false, false };
 
-	const UINT entryThreshold[3] = {45, 135, 270};
+	const UINT entryThreshold[3] = { 45, 135, 270 };
 	const double exitThreshold = 18;
 	const int cardinalAngle = 20, anglePadding = 1;
 	const double triggerDifference = 2; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
@@ -475,7 +473,7 @@ void SelectButtonOnRing()
 	{
 
 #if LOGFILE_ENABLED
-		FILE *fp;
+		FILE* fp;
 		if OPEN_LOGFILE_SUCCESSFUL
 		{
 			fwprintf(fp, L"ButtonRing: Entry Event: Current Magnitude: %4d, Prev Magnitude: %4d\n",
@@ -525,33 +523,34 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: South Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: South Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer South: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer South: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer South: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer South: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: South: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: South: Down\n");
+					Shortcut_Snip();
 				}
 			}
 		}
@@ -561,33 +560,33 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-west Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-west Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-west Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-west Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer South-west: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer South-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer South-west: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer South-west: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-west: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-west: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-west: Down\n");
 				}
 			}
 		}
@@ -597,23 +596,23 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: West Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: West Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: West Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: West Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer West: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer West: Up\n");
 					SendMouseEvent(MouseEvent::right, 0);
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer West: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer West: Down\n");
 					SendMouseEvent(MouseEvent::right, 1);
 				}
 			}
@@ -621,12 +620,12 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: West: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: West: Up\n");
 					SendMouseEvent(MouseEvent::left, 0);
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: West: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: West: Down\n");
 					SendMouseEvent(MouseEvent::left, 1);
 				}
 			}
@@ -637,33 +636,33 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-west Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-west Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-west Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-west Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer North-west: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer North-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer North-west: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer North-west: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-west: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-west: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-west: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-west: Down\n");
 				}
 			}
 		}
@@ -673,33 +672,33 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: North Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: North Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer North: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer North: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer North: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer North: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: North: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: North: Down\n");
 				}
 			}
 		}
@@ -709,33 +708,33 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-east Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-east Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-east Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-east Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer North-east: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer North-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer North-east: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer North-east: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-east: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: North-east: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: North-east: Down\n");
 				}
 			}
 		}
@@ -745,35 +744,35 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: East Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: East Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: East Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: East Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer East: Up\n");
-					Mirror((WCHAR *)L" 1");
+					LogMessage((wchar_t*)L"ButtonRing: Outer East: Up\n");
+					Mirror((WCHAR*)L" 1");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer East: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer East: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: East: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: East: Up\n");
 					SendMouseEvent(MouseEvent::middle, 0);
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: East: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: East: Down\n");
 					SendMouseEvent(MouseEvent::middle, 1);
 				}
 			}
@@ -784,33 +783,33 @@ void SelectButtonOnRing()
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-east Edge: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-east Edge: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-east Edge: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-east Edge: Down\n");
 				}
 			}
 			else if (isOuter)
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer South-east: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer South-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: Outer South-east: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: Outer South-east: Down\n");
 				}
 			}
 			else
 			{
 				if (onExit)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-east: Up\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-east: Up\n");
 				}
 				else if (onEntry)
 				{
-					LogMessage((wchar_t *)L"ButtonRing: South-east: Down\n");
+					LogMessage((wchar_t*)L"ButtonRing: South-east: Down\n");
 				}
 			}
 		}
@@ -819,7 +818,7 @@ void SelectButtonOnRing()
 			inGap = true;
 			onExit = true;
 #if LOGFILE_ENABLED
-			FILE *fp;
+			FILE* fp;
 			if OPEN_LOGFILE_SUCCESSFUL
 			{
 				fwprintf(fp, L"ButtonRing: Gap: %4d ∠ %-4d\n",
@@ -837,12 +836,12 @@ void SelectButtonOnRing()
 					passedThreshold[i] = false;
 				}
 			}
-			SpacePoint.ButtonEvent = (0.0, 0.0);			
+			SpacePoint.ButtonEvent = (0.0, 0.0);
 		}
 	}
 }
 
-extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR *args)
+extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
 {
 	// Get string that starts with ' ' -> convert to int -> set complex number
 	SpacePoint.ButtonRing.real(INT_ARGS);
@@ -850,7 +849,7 @@ extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR *args)
 
 	SelectButtonOnRing();
 }
-extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR *args)
+extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
 {
 	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
 	// LogButtonRingEvent(1);
@@ -862,7 +861,7 @@ extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR *args)
 /// Mainly for testing / debug purposes.
 /// </summary>
 /// <param name="args"></param>
-extern "C" __declspec(dllexport) void SetButtonRing(WCHAR *args)
+extern "C" __declspec(dllexport) void SetButtonRing(WCHAR * args)
 {
 	if (wcsstr(args, L"_Rx") != NULL || wcsstr(args, L"_Y") != NULL)
 	{
@@ -878,4 +877,37 @@ extern "C" __declspec(dllexport) void SetButtonRing(WCHAR *args)
 
 /// Archived code
 #if 1
+
+#if 0
+void SendSingleKey(WORD wVk, bool pressed)
+{
+	UINT status;
+	INPUT input;
+	const UINT nInputs = 1;
+
+	ZeroMemory(&input, sizeof(INPUT));
+
+	input.type = INPUT_KEYBOARD;
+	input.ki.wVk = wVk;
+	input.ki.wScan = 0;
+	input.ki.dwFlags = pressed ? 0 : KEYEVENTF_KEYUP;
+	input.ki.time = 0;
+	input.ki.dwExtraInfo = NULL; // hopefully don't need this
+
+	status = SendInput(nInputs, &input, sizeof(INPUT));
+
+#if 0 // This seems like an easy way to toggle bits of code on and off without having to comment it out
+	if (status != nInputs)
+	{
+		DWORD error = GetLastError();
+		//::LogMessageEx(LogLevelErrors, _T("SendModifierkey: Error %d from SendInput sending key %d\n"), error, wVk);
+	}
+
+	else
+	{
+		::LogMessageEx(LogLevelErrors, _T("SendModifierkey: NO Error from SendInput sending key %d %s\n"), wVk, bReleased ? L"release" : L"press");
+	}
+#endif
+}
+#endif
 #endif
