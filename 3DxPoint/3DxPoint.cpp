@@ -265,11 +265,12 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 	static bool reflectOn = false;
 	if (eventType == MouseEvent::x || eventType == MouseEvent::y || eventType == MouseEvent::scroll) {
 #if 0
-		if (eventType != MouseEvent::scroll && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 8) { reflectOn = true; }
-		if (std::abs(eventValue) < 2) {
-			reflectOn = false; return;
+		if (std::abs(eventValue) < 20) {
+			reflectOn = false; 
+			return;
 		}
-		else if (reflectOn) eventValue *= -0.25;
+		else if (eventType != MouseEvent::scroll && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 18) { reflectOn = true; }
+		if (reflectOn) eventValue *= 0.25;
 #endif
 	}
 
@@ -967,14 +968,14 @@ extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
 {
 	// Get string that starts with ' ' -> convert to int -> set complex number
 	SpacePoint.ButtonRing.real(INT_ARGS);
-	LogButtonRingEvent(0);
+	//LogButtonRingEvent(0);
 
 	SelectButtonOnRing();
 }
 extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
 {
 	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
-	LogButtonRingEvent(1);
+	//LogButtonRingEvent(1);
 
 	SelectButtonOnRing();
 }
