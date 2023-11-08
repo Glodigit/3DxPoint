@@ -70,7 +70,7 @@ typedef struct SpaceState
 {
 	std::complex<double> Mouse; // In the form y + x i
 	std::complex<double> PrevMouse;
-	double Gravity = 30;
+	double AbsZone = 24; // Absolute movement zone for mouse
 	bool BounceBack;
 	int Scroll{};
 	double Speed = 1;
@@ -320,8 +320,8 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 	case MouseEvent::xy:
 		// eventValue not used
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
-		input.mi.dx = (long)std::round(SpacePoint.Mouse.imag() * SpacePoint.Speed);
-		input.mi.dy = (long)std::round(SpacePoint.Mouse.real() * SpacePoint.Speed);
+		input.mi.dx = (long)std::round((SpacePoint.Mouse.imag() + SpacePoint.PrevMouse.imag())/2 * SpacePoint.Speed);
+		input.mi.dy = (long)std::round((SpacePoint.Mouse.real() + SpacePoint.PrevMouse.real())/2 * SpacePoint.Speed);
 		break;
 		//default: return;
 	}
@@ -527,11 +527,17 @@ extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 {
 	SpacePoint.Mouse.imag(INT_ARGS);
 	//LogMouseEvent(0);
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.Gravity) {
-		if (std::abs(SpacePoint.Mouse.imag()) >= std::abs(SpacePoint.PrevMouse.imag()))
+
+	// Applies absolute zone to the centre of the spacemouse and for the end of any large moves.
+	// Could use some kind of polling-based smoothing of the cursor.
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsZone || 
+		(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 7)) {
+		if (std::abs(SpacePoint.Mouse.imag()) > std::abs(SpacePoint.PrevMouse.imag()))
 		SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
+		//	SendMouseEvent(MouseEvent::xy,0);
 	}
-	else SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.Gravity * std::sin(std::arg(SpacePoint.Mouse))));
+	else SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.AbsZone * std::sin(std::arg(SpacePoint.Mouse))));
+	
 	SpacePoint.PrevMouse.imag(SpacePoint.Mouse.imag());
 
 }
@@ -541,14 +547,14 @@ extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 	SpacePoint.Mouse.real(INT_ARGS);
 
 	//LogMouseEvent(1);
-	//SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
 
-
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.Gravity) {
-		if (std::abs(SpacePoint.Mouse.real()) >= std::abs(SpacePoint.PrevMouse.real()))
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsZone || 
+		(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 7)) {
+		if (std::abs(SpacePoint.Mouse.real()) > std::abs(SpacePoint.PrevMouse.real()))
 			SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
+			//SendMouseEvent(MouseEvent::xy, 0);
 	}
-	else SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.Gravity * std::cos(std::arg(SpacePoint.Mouse))));
+	else SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.AbsZone * std::cos(std::arg(SpacePoint.Mouse))));
 
 	SpacePoint.PrevMouse.real(SpacePoint.Mouse.real());
 
@@ -726,7 +732,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer South-west: Down\n");
-					Shortcut_BrowserPrevTab();
+					TapKey(VK_BROWSER_BACK);
 				}
 			}
 			else
@@ -738,7 +744,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: South-west: Down\n");
-					TapKey(VK_BROWSER_BACK);
+					Shortcut_BrowserPrevTab();
 				}
 			}
 		}
@@ -870,7 +876,6 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: North-east Edge: Down\n");
-					Shortcut_BrowserCloseTab();
 				}
 			}
 			else if (isOuter)
@@ -882,7 +887,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer North-east: Down\n");
-					Shortcut_BrowserNextTab();
+					TapKey(VK_BROWSER_FORWARD);
 				}
 			}
 			else
@@ -894,7 +899,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: North-east: Down\n");
-					TapKey(VK_BROWSER_FORWARD);
+					Shortcut_BrowserNextTab();
 				}
 			}
 		}
@@ -955,6 +960,7 @@ void SelectButtonOnRing()
 				if (onExit)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer South-east: Up\n");
+					Shortcut_BrowserCloseTab();
 				}
 				else if (onEntry)
 				{
