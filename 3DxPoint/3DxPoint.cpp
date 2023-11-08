@@ -191,6 +191,25 @@ void LogButtonRingEvent(bool realOrImag)
 	}
 }
 
+/// @param realOrImag 0 for real, 1 for imaginary.
+void LogMouseEvent(bool realOrImag)
+{
+
+#if LOGFILE_ENABLED
+		FILE* fp;
+		if OPEN_LOGFILE_SUCCESSFUL
+		{
+			fwprintf(fp, L"Mouse: %s Event: %4d ∠ %-4d  (%-4d + %4d i)\n",
+					 realOrImag ? L"Imag" : L"Real",
+					 (int)std::round(std::abs(SpacePoint.Mouse)),
+					 (int)std::round(toDegrees * std::arg(SpacePoint.Mouse)),
+					 (int)SpacePoint.Mouse.real(),
+					 (int)SpacePoint.Mouse.imag());
+			fclose(fp);
+		}
+#endif
+}
+
 /// @brief Call to log when a MirrorEvent has occurred.
 /// @param scrollOrRing 0 for scroll, 1 for ring.
 void LogMirrorEvent(bool scrollOrRing)
@@ -505,19 +524,20 @@ extern "C" __declspec(dllexport) void Mirror(WCHAR * args)
 
 extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 {
-	SpacePoint.PrevMouse.imag(SpacePoint.Mouse.imag());
 	SpacePoint.Mouse.imag(INT_ARGS);
-
-	SendMouseEvent(MouseEvent::x, (int)SpacePoint.Mouse.imag());
+	LogMouseEvent(0);
+	SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
+	SpacePoint.PrevMouse.imag(SpacePoint.Mouse.imag());
 
 }
 
 extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 {
-	SpacePoint.PrevMouse.real(SpacePoint.Mouse.real());
 	SpacePoint.Mouse.real(INT_ARGS);
 
-	SendMouseEvent(MouseEvent::y, (int)SpacePoint.Mouse.real());
+	LogMouseEvent(1);
+	SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
+	SpacePoint.PrevMouse.real(SpacePoint.Mouse.real());
 
 }
 
@@ -567,9 +587,9 @@ void SelectButtonOnRing()
 {
 	static bool passedThreshold[3] = { false, false, false };
 
-	const UINT entryThreshold[3] = { 42, 124, 200 };
+	const UINT entryThreshold[3] = { 42, 124, 248 };
 	const double exitThreshold = 10;
-	const int cardinalAngle = 20, anglePadding = 1;
+	const int cardinalAngle = 30, anglePadding = 1;
 	const double triggerDifference = -1; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
 	const bool soundOnTrigger = true; // false = sound when threshold passed
 
@@ -643,6 +663,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: South Edge: Down\n");
+					SendMouseEvent(MouseEvent::scroll, -600);
 				}
 			}
 			else if (isOuter)
@@ -654,6 +675,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer South: Down\n");
+					SendMouseEvent(MouseEvent::scroll, -240);
 				}
 			}
 			else
@@ -665,7 +687,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: South: Down\n");
-					Shortcut_Snip();
+					SendMouseEvent(MouseEvent::scroll, -120);
 				}
 			}
 		}
@@ -769,6 +791,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer North-west: Down\n");
+					if (PC_Select == PC::Computer1) TapKey(VK_RETURN); // Save snip
 				}
 			}
 			else
@@ -780,6 +803,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: North-west: Down\n");
+					Shortcut_Snip();
 				}
 			}
 		}
@@ -794,6 +818,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: North Edge: Down\n");
+					SendMouseEvent(MouseEvent::scroll, 600);
 				}
 			}
 			else if (isOuter)
@@ -805,6 +830,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: Outer North: Down\n");
+					SendMouseEvent(MouseEvent::scroll, 240);
 				}
 			}
 			else
@@ -816,6 +842,7 @@ void SelectButtonOnRing()
 				else if (onEntry)
 				{
 					LogMessage((wchar_t*)L"ButtonRing: North: Down\n");
+					SendMouseEvent(MouseEvent::scroll, 120);
 				}
 			}
 		}
