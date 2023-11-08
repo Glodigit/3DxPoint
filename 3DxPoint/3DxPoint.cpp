@@ -70,6 +70,7 @@ typedef struct SpaceState
 {
 	std::complex<double> Mouse; // In the form y + x i
 	std::complex<double> PrevMouse;
+	double Gravity = 30;
 	bool BounceBack;
 	int Scroll{};
 	double Speed = 1;
@@ -525,8 +526,12 @@ extern "C" __declspec(dllexport) void Mirror(WCHAR * args)
 extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 {
 	SpacePoint.Mouse.imag(INT_ARGS);
-	LogMouseEvent(0);
-	SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
+	//LogMouseEvent(0);
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.Gravity) {
+		if (std::abs(SpacePoint.Mouse.imag()) >= std::abs(SpacePoint.PrevMouse.imag()))
+		SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
+	}
+	else SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.Gravity * std::sin(std::arg(SpacePoint.Mouse))));
 	SpacePoint.PrevMouse.imag(SpacePoint.Mouse.imag());
 
 }
@@ -535,8 +540,16 @@ extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 {
 	SpacePoint.Mouse.real(INT_ARGS);
 
-	LogMouseEvent(1);
-	SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
+	//LogMouseEvent(1);
+	//SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
+
+
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.Gravity) {
+		if (std::abs(SpacePoint.Mouse.real()) >= std::abs(SpacePoint.PrevMouse.real()))
+			SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
+	}
+	else SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.Gravity * std::cos(std::arg(SpacePoint.Mouse))));
+
 	SpacePoint.PrevMouse.real(SpacePoint.Mouse.real());
 
 }
