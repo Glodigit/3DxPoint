@@ -32,6 +32,8 @@
 #define INT_ARGS _wtoi(wcsrchr(args, L' '))
 //		read like (int)*args
 
+#define LOG_SET_BUTTONRING 0
+
 typedef enum class PC
 {
 	Minimal,
@@ -70,7 +72,7 @@ typedef struct SpaceState
 {
 	std::complex<double> Mouse; // In the form y + x i
 	std::complex<double> PrevMouse;
-	double AbsZone = 24; // Absolute movement zone for mouse
+	double AbsZone = 48; // Absolute movement zone for mouse
 	bool BounceBack;
 	int Scroll{};
 	double Speed = 1;
@@ -311,11 +313,11 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue)
 		break;
 	case MouseEvent::x:
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
-		input.mi.dx = (long)std::round(eventValue * SpacePoint.Speed);
+		input.mi.dx = (long)std::round(1.0/3.0 * eventValue * SpacePoint.Speed);
 		break;
 	case MouseEvent::y:
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
-		input.mi.dy = (long)std::round(eventValue * SpacePoint.Speed);
+		input.mi.dy = (long)std::round(1.0/3.0 * eventValue * SpacePoint.Speed);
 		break;
 	case MouseEvent::xy:
 		// eventValue not used
@@ -530,8 +532,8 @@ extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 
 	// Applies absolute zone to the centre of the spacemouse and for the end of any large moves.
 	// Could use some kind of polling-based smoothing of the cursor.
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsZone || 
-		(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 7)) {
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsZone){// || 
+		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
 		if (std::abs(SpacePoint.Mouse.imag()) > std::abs(SpacePoint.PrevMouse.imag()))
 		SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
 		//	SendMouseEvent(MouseEvent::xy,0);
@@ -548,8 +550,8 @@ extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 
 	//LogMouseEvent(1);
 
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsZone || 
-		(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 7)) {
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsZone ){//|| 
+		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
 		if (std::abs(SpacePoint.Mouse.real()) > std::abs(SpacePoint.PrevMouse.real()))
 			SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
 			//SendMouseEvent(MouseEvent::xy, 0);
@@ -1014,15 +1016,17 @@ extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
 {
 	// Get string that starts with ' ' -> convert to int -> set complex number
 	SpacePoint.ButtonRing.real(INT_ARGS);
-	//LogButtonRingEvent(0);
-
+#if LOG_SET_BUTTONRING
+	LogButtonRingEvent(0);
+#endif
 	SelectButtonOnRing();
 }
 extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
 {
 	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
-	//LogButtonRingEvent(1);
-
+#if LOG_SET_BUTTONRING
+	LogButtonRingEvent(1);
+#endif
 	SelectButtonOnRing();
 }
 /// <summary>
