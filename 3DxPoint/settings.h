@@ -11,4 +11,4 @@
 /// The PC to create the DLL for.
 /// Usually used to compile different virtual buttons for different PCs.
 /// </summary>
-constexpr PC PC_Select = PC::Computer1;
+constexpr PC PC_Select = PC::Typical;
