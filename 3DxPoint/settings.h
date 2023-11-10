@@ -2,7 +2,7 @@
 #include "pch.h"
 
 
-#define LOGFILE_ENABLED		true
+#define LOGFILE_ENABLED		false
 #define LOG_PROCESSINFO		true
 #define LOG_SET_BUTTONRING	false
 #define LOG_MOUSE_EVENT		false

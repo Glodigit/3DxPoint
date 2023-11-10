@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?><AppCfg Default="false" xmlns="" CfgFormatVersion="1.3" ThisFileVersion="1.9">
+  <AppInfo>
+    <Signature>
+      <Name>STR_DESKTOP</Name>
+    </Signature>
+    <Options/>
+  </AppInfo>
+  <AuthorInfo>
+    <DriverVersion>17.6.4.16911</DriverVersion>
+    <LastChange>
+      <Tool>3DxService.exe</Tool>
+      <Version>17.6.4.16911</Version>
+      <Date>2023:11:5:10:15:34:28:305</Date>
+      <User>KDeng</User>
+    </LastChange>
+    <Created>
+      <Tool>3DxService.exe</Tool>
+      <Version>17.6.4.16911</Version>
+      <Date>2023:11:5:10:15:34:28:305</Date>
+      <User>KDeng</User>
+    </Created>
+  </AuthorInfo>
+  <CfgProperties>
+    <ID>ID_Desktop_Cfg</ID>
+    <Name>STR_DESKTOP</Name>
+    <InheritsFromID>ID_Desktop_Cfg</InheritsFromID>
+    <Grab>Hard</Grab>
+  </CfgProperties>
+  <Settings>
+    <ResponseCurve>1.0</ResponseCurve>
+    <OverallScale>1.00</OverallScale>
+  </Settings>
+  <AxisActions>
+    <AxisAction Type="DLL">
+      <Name>Log Axis</Name>
+      <ID>3DxPoint_LogAxis</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>LogAxis</Function>
+      <Arg>HIDID</Arg>
+    </AxisAction>
+    <AxisAction Type="DLL">
+      <Name>Set Mouse X</Name>
+      <ID>3DxPoint_SetMouseX</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>SetMouseX</Function>
+      <Arg>HIDID</Arg>
+    </AxisAction>
+    <AxisAction Type="DLL">
+      <Name>Set Mouse Y</Name>
+      <ID>3DxPoint_SetMouseY</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>SetMouseY</Function>
+      <Arg>HIDID</Arg>
+    </AxisAction>
+    <AxisAction Type="DLL">
+      <Name>Set Scroll</Name>
+      <ID>3DxPoint_SetScroll</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>SetScroll</Function>
+      <Arg>HIDID</Arg>
+    </AxisAction>
+    <AxisAction Type="DLL">
+      <Name>Set Mouse Speed</Name>
+      <ID>3DxPoint_SetSpeed</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>SetSpeed</Function>
+      <Arg>HIDID</Arg>
+    </AxisAction>
+    <AxisAction Type="DLL">
+      <Name>Set ButtonRing Real Part</Name>
+      <ID>3DxPoint_SetButtonRingReal</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>SetButtonRingReal</Function>
+      <Arg>HIDID</Arg>
+    </AxisAction>
+    <AxisAction Type="DLL">
+      <Name>Set ButtonRing Imaginary Part</Name>
+      <ID>3DxPoint_SetButtonRingImag</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>SetButtonRingImag</Function>
+      <Arg>HIDID</Arg>
+    </AxisAction>
+  </AxisActions>
+  <ButtonActions>
+    <ButtonAction Type="DLL">
+      <Name>Mirror</Name>
+      <ID>3DxPoint_Mirror</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>Mirror</Function>
+      <Arg>HIDID</Arg>
+    </ButtonAction>
+    <ButtonAction Type="DLL">
+      <Name>Mirror ButtonRing</Name>
+      <ID>3DxPoint_MirrorRing</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>MirrorRing</Function>
+      <Arg>HIDID</Arg>
+    </ButtonAction>
+    <ButtonAction Type="DLL">
+      <Name>Mirror Scroll Direction</Name>
+      <ID>3DxPoint_MirrorScroll</ID>
+      <Executable>3DxPoint.DLL</Executable>
+      <Function>MirrorScroll</Function>
+      <Arg>HIDID</Arg>
+    </ButtonAction>
+  </ButtonActions>
+  <Devices>
+    <Device>
+      <Name>Standard 3D Mouse</Name>
+      <ID>ID_Standard_3D_Mouse</ID>
+      <AxisFilter>None</AxisFilter>
+      <CurrentButtonBank>Default</CurrentButtonBank>
+      <CurrentAxisBank>Default</CurrentAxisBank>
+      <AxisBank Default="true">
+        <Name>STR_DEFAULT_BANK</Name>
+        <ID>Default</ID>
+        <Axis>
+          <Enabled>true</Enabled>
+          <Input>
+            <ActionID>HIDMultiAxis_X</ActionID>
+            <Min>-350</Min>
+            <Max>350</Max>
+            <Deadband>0</Deadband>
+          </Input>
+          <Output>
+            <ActionID>3DxPoint_SetMouseX</ActionID>
+            <Scale>1.0000</Scale>
+            <Reversed>false</Reversed>
+          </Output>
+        </Axis>
+        <Axis>
+          <Enabled>true</Enabled>
+          <Input>
+            <ActionID>HIDMultiAxis_Y</ActionID>
+            <Min>-350</Min>
+            <Max>350</Max>
+            <Deadband>0</Deadband>
+          </Input>
+          <Output>
+            <ActionID>3DxPoint_SetMouseY</ActionID>
+            <Scale>1.0000</Scale>
+            <Reversed>false</Reversed>
+          </Output>
+        </Axis>
+        <Axis>
+          <Enabled>true</Enabled>
+          <Input>
+            <ActionID>HIDMultiAxis_Z</ActionID>
+            <Min>-350</Min>
+            <Max>350</Max>
+            <Deadband>0</Deadband>
+          </Input>
+          <Output>
+            <ActionID>3DxPoint_SetSpeed</ActionID>
+            <Reversed>true</Reversed>
+            <Scale>2.8000</Scale>
+          </Output>
+        </Axis>
+        <Axis>
+          <Enabled>true</Enabled>
+          <Input>
+            <ActionID>HIDMultiAxis_Rx</ActionID>
+            <Min>-350</Min>
+            <Max>350</Max>
+            <Deadband>2</Deadband>
+          </Input>
+          <Output>
+            <ActionID>3DxPoint_SetButtonRingReal</ActionID>
+            <Reversed>true</Reversed>
+          </Output>
+        </Axis>
+        <Axis>
+          <Enabled>true</Enabled>
+          <Input>
+            <ActionID>HIDMultiAxis_Ry</ActionID>
+            <Min>-350</Min>
+            <Max>350</Max>
+            <Deadband>2</Deadband>
+          </Input>
+          <Output>
+            <ActionID>3DxPoint_SetButtonRingImag</ActionID>
+            <Reversed>true</Reversed>
+          </Output>
+        </Axis>
+        <Axis>
+          <Enabled>true</Enabled>
+          <Input>
+            <ActionID>HIDMultiAxis_Rz</ActionID>
+            <Min>-350</Min>
+            <Max>350</Max>
+            <Deadband>20</Deadband>
+          </Input>
+          <Output>
+            <ActionID>3DxPoint_SetScroll</ActionID>
+            <Reversed>false</Reversed>
+          </Output>
+        </Axis>
+      </AxisBank>
+    </Device>
+  </Devices>
+</AppCfg>

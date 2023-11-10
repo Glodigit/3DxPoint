@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?><Global Default="false" xmlns="" CfgFormatVersion="1.3" ThisFileVersion="2.0">
+	<CfgProperties>
+		<ID>ID_Global_Cfg</ID>
+		<Name>STR_GLOBALCFG</Name>
+		<InheritsFromID>ID_Base_Cfg</InheritsFromID>
+	</CfgProperties>
+	<AuthorInfo>
+		<DriverVersion>17.6.4.16911</DriverVersion>
+		<LastChange>
+			<Tool>3DxService.exe</Tool>
+			<Version>17.6.4.16911</Version>
+			<Date>2023:10:6:28:21:7:32:918</Date>
+			<User>KDeng</User>
+		</LastChange>
+		<Created>
+			<Tool>3DxService.exe</Tool>
+			<Version>17.6.4.16911</Version>
+			<Date>2023:4:1:3:18:28:0:388</Date>
+			<User>KDeng</User>
+		</Created>
+	</AuthorInfo>
+	<Settings>
+		<InstallerAutoCheckForUpdates>true</InstallerAutoCheckForUpdates>
+		<LastAutoCheckForUpdates>25-10-2023</LastAutoCheckForUpdates>
+		<LogLevel>0</LogLevel>
+		<LastSWUpdateWarningVersion>10.8.16</LastSWUpdateWarningVersion>
+		<AutoCheckForUpdates>false</AutoCheckForUpdates>
+	</Settings>
+	<ButtonActions>
+		<ButtonAction Type="Driver_Other">
+			<ID>Driver_Desktop_ToggleGrab</ID>
+			<Name>STR_DRIVER_DESKTOP_TOGGLEGRAB</Name>
+			<Image>
+				<Source>[driver_images:Driver_Desktop_ToggleGrab.png]</Source>
+			</Image>
+		</ButtonAction>
+		<ButtonAction Type="DLL">
+			<Name>Log Button</Name>
+			<ID>3DxPoint_LogButton</ID>
+			<Executable>3DxPoint.DLL</Executable>
+			<Function>LogButton</Function>
+			<Arg>HIDID</Arg>
+		  </ButtonAction>
+	</ButtonActions>
+	<Devices>
+		<Device>
+			<ID>ID_Standard_3D_Mouse</ID>
+			<ButtonBank>
+				<Button>
+					<Input>
+						<ActionID>V3DK_FIT</ActionID>
+					</Input>
+					<Output>
+						<ActionID>Driver_Desktop_ToggleGrab</ActionID>
+					</Output>
+				</Button>
+			</ButtonBank>
+		</Device>
+	</Devices>
+</Global>
