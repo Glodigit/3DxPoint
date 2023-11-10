@@ -11,7 +11,8 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <complex>
-#include <future>
+#include <vector>
+#include <chrono>
 #define LOGFILE_ENABLED (true)
 #if LOGFILE_ENABLED
 #include <string>
@@ -71,9 +72,10 @@ bool doubleInRange(double value, double minValue, double maxValue)
 typedef struct SpaceState
 {
 	std::complex<double> Mouse; // In the form y + x i
+	std::vector<std::complex<double>> MouseBuffer;
+	int MouseBufferSize = 5;
 	std::complex<double> PrevMouse;
 	double AbsRadius = 20; // Absolute movement radius for mouse
-	bool BounceBack;
 	int Scroll{};
 	double Speed = 1;
 	std::complex<double> ButtonRing;
@@ -269,6 +271,32 @@ extern "C" __declspec(dllexport) void LogButton(WCHAR * args)
 }
 #endif
 
+/// Mirroring externals
+#if 1 
+extern "C" __declspec(dllexport) void MirrorRing(WCHAR * args)
+{
+	if (INT_ARGS)
+	{
+		SpacePoint.MirrorRing = !SpacePoint.MirrorRing;
+		LogMirrorEvent(1);
+	}
+}
+
+extern "C" __declspec(dllexport) void MirrorScroll(WCHAR * args)
+{
+	if (INT_ARGS)
+	{
+		SpacePoint.MirrorScroll = !SpacePoint.MirrorScroll;
+		LogMirrorEvent(0);
+	}
+}
+
+extern "C" __declspec(dllexport) void Mirror(WCHAR * args)
+{
+	MirrorRing(args);
+	MirrorScroll(args);
+}
+#endif
 /// SendInput functions
 #if 1
 
@@ -498,110 +526,6 @@ void Shortcut_BrowserPrevTab(PC pc = PC_Select) {
 #endif
 #endif
 
-/// Set SpacePoint functions / exports
-void SelectButtonOnRing(void);
-extern "C" __declspec(dllexport) void MirrorRing(WCHAR * args)
-{
-	if (INT_ARGS)
-	{
-		SpacePoint.MirrorRing = !SpacePoint.MirrorRing;
-		LogMirrorEvent(1);
-	}
-}
-
-extern "C" __declspec(dllexport) void MirrorScroll(WCHAR * args)
-{
-	if (INT_ARGS)
-	{
-		SpacePoint.MirrorScroll = !SpacePoint.MirrorScroll;
-		LogMirrorEvent(0);
-	}
-}
-
-extern "C" __declspec(dllexport) void Mirror(WCHAR * args)
-{
-	MirrorRing(args);
-	MirrorScroll(args);
-}
-
-
-extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
-{
-	SpacePoint.Mouse.imag(INT_ARGS);
-	//LogMouseEvent(0);
-
-	// Applies absolute zone to the centre of the spacemouse and for the end of any large moves.
-	// Could use some kind of polling-based smoothing of the cursor.
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius){// || 
-		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
-		if (std::abs(SpacePoint.Mouse.imag()) > std::abs(SpacePoint.PrevMouse.imag()))
-		SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
-		//	SendMouseEvent(MouseEvent::xy,0);
-	}
-	else SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.AbsRadius * std::sin(std::arg(SpacePoint.Mouse))));
-	
-	SpacePoint.PrevMouse.imag(SpacePoint.Mouse.imag());
-
-}
-
-extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
-{
-	SpacePoint.Mouse.real(INT_ARGS);
-
-	//LogMouseEvent(1);
-
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius ){//|| 
-		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
-		if (std::abs(SpacePoint.Mouse.real()) > std::abs(SpacePoint.PrevMouse.real()))
-			SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
-			//SendMouseEvent(MouseEvent::xy, 0);
-	}
-	else SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.AbsRadius * std::cos(std::arg(SpacePoint.Mouse))));
-
-	SpacePoint.PrevMouse.real(SpacePoint.Mouse.real());
-
-}
-
-extern "C" __declspec(dllexport) void SetScroll(WCHAR * args)
-{
-	SpacePoint.Scroll =
-		(int)INT_ARGS * (SpacePoint.MirrorScroll ? -1 : 1)
-		//* std::pow(SpacePoint.Speed, 0.75);
-		* SpacePoint.Speed;
-
-	SendMouseEvent(MouseEvent::scroll, SpacePoint.Scroll);
-}
-
-/// <summary>
-/// For setting the speed of mouse / scroll events.
-/// </summary>
-/// <param name="args"></param>
-extern "C" __declspec(dllexport) void SetSpeed(WCHAR * args)
-{
-	const UINT axisMax = 350;
-	double speed = 1 + (double)INT_ARGS / axisMax;
-	const double minSpeed = 0.03;
-	const double maxSpeed = 6;
-	const double exponent = 3; // Keep greater than 0
-
-	// m = 0.8 x^2 + 0.2 (for example)
-	// m = (1-y)x^2 + y
-	SpacePoint.Speed = //(speed < 1) ?
-		(1 - minSpeed) * std::pow(speed, exponent) + minSpeed
-		//:
-#if 0
-		(minSpeed - 1)
-		* std::pow(2 - speed, exponent)
-		+ (2 - minSpeed)
-
-		(1 - maxSpeed)
-		* std::pow(2 - speed, exponent)
-		+ maxSpeed
-#endif
-		;
-
-	// LogSpeedEvent();
-}
 
 
 void SelectButtonOnRing()
@@ -1012,6 +936,90 @@ void SelectButtonOnRing()
 	}
 }
 
+/// Set SpacePoint functions / exports
+
+
+
+extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
+{
+	SpacePoint.Mouse.real(0);
+	SpacePoint.Mouse.imag(INT_ARGS);
+	//LogMouseEvent(0);
+
+	// Applies absolute zone to the centre of the spacemouse and for the end of any large moves.
+	// Could use some kind of polling-based smoothing of the cursor.
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius) {// || 
+		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
+		if (std::abs(SpacePoint.Mouse.imag()) > std::abs(SpacePoint.PrevMouse.imag()))
+			SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
+		//	SendMouseEvent(MouseEvent::xy,0);
+	}
+	else SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.AbsRadius * std::sin(std::arg(SpacePoint.Mouse))));
+
+	SpacePoint.PrevMouse.imag(SpacePoint.Mouse.imag());
+
+}
+
+extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
+{
+	SpacePoint.Mouse.real(INT_ARGS);
+	SpacePoint.Mouse.imag(0);
+	//LogMouseEvent(1);
+
+	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius) {//|| 
+		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
+		if (std::abs(SpacePoint.Mouse.real()) > std::abs(SpacePoint.PrevMouse.real()))
+			SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
+		//SendMouseEvent(MouseEvent::xy, 0);
+	}
+	else SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.AbsRadius * std::cos(std::arg(SpacePoint.Mouse))));
+
+	SpacePoint.PrevMouse.real(SpacePoint.Mouse.real());
+
+}
+
+extern "C" __declspec(dllexport) void SetScroll(WCHAR * args)
+{
+	SpacePoint.Scroll =
+		(int)INT_ARGS * (SpacePoint.MirrorScroll ? -1 : 1)
+		//* std::pow(SpacePoint.Speed, 0.75);
+		* SpacePoint.Speed;
+
+	SendMouseEvent(MouseEvent::scroll, SpacePoint.Scroll);
+}
+
+/// <summary>
+/// For setting the speed of mouse / scroll events.
+/// </summary>
+/// <param name="args"></param>
+extern "C" __declspec(dllexport) void SetSpeed(WCHAR * args)
+{
+	const UINT axisMax = 350;
+	double speed = 1 + (double)INT_ARGS / axisMax;
+	const double minSpeed = 0.03;
+	const double maxSpeed = 6;
+	const double exponent = 3; // Keep greater than 0
+
+	// m = 0.8 x^2 + 0.2 (for example)
+	// m = (1-y)x^2 + y
+	SpacePoint.Speed = //(speed < 1) ?
+		(1 - minSpeed) * std::pow(speed, exponent) + minSpeed
+		//:
+#if 0
+		(minSpeed - 1)
+		* std::pow(2 - speed, exponent)
+		+ (2 - minSpeed)
+
+		(1 - maxSpeed)
+		* std::pow(2 - speed, exponent)
+		+ maxSpeed
+#endif
+		;
+
+	// LogSpeedEvent();
+}
+
+
 extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
 {
 	// Get string that starts with ' ' -> convert to int -> set complex number
@@ -1051,36 +1059,4 @@ extern "C" __declspec(dllexport) void SetButtonRing(WCHAR * args)
 /// Archived code
 #if 1
 
-#if 0
-void SendSingleKey(WORD wVk, bool pressed)
-{
-	UINT status;
-	INPUT input;
-	const UINT nInputs = 1;
-
-	ZeroMemory(&input, sizeof(INPUT));
-
-	input.type = INPUT_KEYBOARD;
-	input.ki.wVk = wVk;
-	input.ki.wScan = 0;
-	input.ki.dwFlags = pressed ? 0 : KEYEVENTF_KEYUP;
-	input.ki.time = 0;
-	input.ki.dwExtraInfo = NULL; // hopefully don't need this
-
-	status = SendInput(nInputs, &input, sizeof(INPUT));
-
-#if 0 // This seems like an easy way to toggle bits of code on and off without having to comment it out
-	if (status != nInputs)
-	{
-		DWORD error = GetLastError();
-		//::LogMessageEx(LogLevelErrors, _T("SendModifierkey: Error %d from SendInput sending key %d\n"), error, wVk);
-	}
-
-	else
-	{
-		::LogMessageEx(LogLevelErrors, _T("SendModifierkey: NO Error from SendInput sending key %d %s\n"), wVk, bReleased ? L"release" : L"press");
-	}
-#endif
-}
-#endif
 #endif
