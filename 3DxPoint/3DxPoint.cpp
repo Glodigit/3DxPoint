@@ -3,8 +3,7 @@
 // SPDX-License-Identifier: Boost Software License 1.0
 
 /* ToDo List:
-	- 	Clean up old comments and unused variables
-	-	change triggerEvent to SpaceState.ButtonEvent
+	- 	Implement averaging feature for mouse events
 	*/
 
 #include "pch.h"
@@ -20,15 +19,12 @@
 #pragma comment(lib,"winmm.lib")
 #include "mmsystem.h"
 
-#define LOG_PATH L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\3DxPoint.txt"
-#if 1 // Change to 0 to mute
-#define NOTE_C_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato C.wav"
-#define NOTE_D_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato D.wav"
-#define NOTE_E_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato E.wav"
-#define NOTE_G_PATH  L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato G.wav"
-#endif
+#define LOG_PATH	L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\3DxPoint.txt"
+#define NOTE_C_PATH L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato C.wav"
+#define NOTE_D_PATH L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato D.wav"
+#define NOTE_E_PATH L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato E.wav"
+#define NOTE_G_PATH L"C:\\ProgramData\\3Dconnexion\\3DxPoint\\Pizzicato G.wav"
 
-	// #define TXT_PATH L"C:\\Users\\[PUT_USERNAME_HERE]\\source\\repos\\3DxPoint\\3DxPoint\\3DxPoint.txt"
 #define OPEN_LOGFILE_SUCCESSFUL (_wfopen_s(&fp, LOG_PATH, L"a,ccs=UTF-8") == 0 && fp != NULL)
 #define INT_ARGS _wtoi(wcsrchr(args, L' '))
 //		read like (int)*args
@@ -60,14 +56,6 @@ bool doubleInRange(double p, double v1, double v2)
 {
 	return v1 <= v2 ? v1 <= p && p <= v2 : v2 <= p && p <= v1;
 }
-
-#if 0
-// The one I wrote
-bool doubleInRange(double value, double minValue, double maxValue)
-{
-	return (minValue <= value) && (value <= maxValue);
-}
-#endif
 
 typedef struct SpaceState
 {
@@ -160,7 +148,6 @@ extern "C" __declspec(dllexport) LRESULT DllExit(LPVOID lpReserved)
 	return ERROR_SUCCESS;
 }
 #endif
-
 /// Logging functions/exports
 #if 1
 void LogMessage(wchar_t* s)
@@ -270,7 +257,6 @@ extern "C" __declspec(dllexport) void LogButton(WCHAR * args)
 #endif
 }
 #endif
-
 /// Mirroring externals
 #if 1 
 extern "C" __declspec(dllexport) void MirrorRing(WCHAR * args)
@@ -525,8 +511,6 @@ void Shortcut_BrowserPrevTab(PC pc = PC_Select) {
 
 #endif
 #endif
-
-
 
 void SelectButtonOnRing()
 {
@@ -937,9 +921,7 @@ void SelectButtonOnRing()
 }
 
 /// Set SpacePoint functions / exports
-
-
-
+#if 1
 extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 {
 	SpacePoint.Mouse.real(0);
@@ -1055,6 +1037,8 @@ extern "C" __declspec(dllexport) void SetButtonRing(WCHAR * args)
 		SetButtonRingImag(args);
 	}
 }
+
+#endif
 
 /// Archived code
 #if 1
