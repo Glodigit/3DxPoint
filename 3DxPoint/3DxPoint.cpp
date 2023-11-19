@@ -437,9 +437,18 @@ void Shortcut_BrowserPrevTab(PC pc = PC_Select) {
 #endif
 #endif
 
+double MagnitueMultiplier(double angle) {
+	// Number from 0 to 1. Diagonals produce magnitudes greater than 350, so this is set as the 
+	// minimum value to multiply by to normalise the magnitudes
+	const double DiagonalMultiplier = 348.0 / 424.0;
+	const double x = 2 * (1 - DiagonalMultiplier) / (1 + DiagonalMultiplier);
+	return (2 + x * std::cos(4 * angle)) / (2 + x);
+}
+
 void SelectButtonOnRing()
 {
 	static bool passedThreshold[3] = { false, false, false };
+	bool onEntry = false, onExit = false;
 
 	const UINT entryThreshold[3] = { 42, 124, 248 };
 	const double exitThreshold = 10;
@@ -447,10 +456,23 @@ void SelectButtonOnRing()
 	const double triggerDifference = -1; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
 	const bool soundOnTrigger = false; // false = sound when threshold passed
 
-	double currentMagnitude = std::abs(SpacePoint.ButtonRing);
-	double prevMagnitude = max(	std::abs(SpacePoint.PrevButtonRing[0]),
-								std::abs(SpacePoint.PrevButtonRing[1]));
-	bool onEntry = false, onExit = false;
+#if 1
+	double currentMagnitude = 
+		std::abs(SpacePoint.ButtonRing) * MagnitueMultiplier(std::arg(SpacePoint.ButtonRing));
+	double prevMagnitude = max(	
+		std::abs(SpacePoint.PrevButtonRing[0]) * MagnitueMultiplier(std::arg(SpacePoint.PrevButtonRing[0])),
+		std::abs(SpacePoint.PrevButtonRing[1]) * MagnitueMultiplier(std::arg(SpacePoint.PrevButtonRing[1]))
+		);
+#endif
+
+#if 0
+	double currentMagnitude =
+		std::abs(SpacePoint.ButtonRing);
+	double prevMagnitude = max(
+		std::abs(SpacePoint.PrevButtonRing[0]),
+		std::abs(SpacePoint.PrevButtonRing[1])
+	);
+#endif
 
 	/// Rising / falling edge of Schmitt trigger
 	if (currentMagnitude < prevMagnitude + triggerDifference &&
@@ -469,8 +491,10 @@ void SelectButtonOnRing()
 			}
 #endif
 		
-		SpacePoint.ButtonEvent = std::abs(SpacePoint.PrevButtonRing[0]) >= std::abs(SpacePoint.PrevButtonRing[1]) ?
-									SpacePoint.PrevButtonRing[0] : SpacePoint.PrevButtonRing[1];
+		SpacePoint.ButtonEvent = 
+			std::abs(SpacePoint.PrevButtonRing[0]) >= std::abs(SpacePoint.PrevButtonRing[1]) ?
+			SpacePoint.PrevButtonRing[0] : SpacePoint.PrevButtonRing[1];
+		SpacePoint.ButtonEvent *= MagnitueMultiplier(std::arg(SpacePoint.ButtonEvent));
 		onEntry = true;
 	}
 	else if (currentMagnitude < exitThreshold)
