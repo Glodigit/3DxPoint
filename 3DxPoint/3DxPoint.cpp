@@ -445,7 +445,7 @@ void SelectButtonOnRing()
 	const double exitThreshold = 10;
 	const int cardinalAngle = 30, anglePadding = 1;
 	const double triggerDifference = -1; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
-	const bool soundOnTrigger = true; // false = sound when threshold passed
+	const bool soundOnTrigger = false; // false = sound when threshold passed
 
 	double currentMagnitude = std::abs(SpacePoint.ButtonRing);
 	double prevMagnitude = max(	std::abs(SpacePoint.PrevButtonRing[0]),
@@ -863,7 +863,7 @@ extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 	// Could use some kind of polling-based smoothing of the cursor.
 	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius) {// || 
 		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
-		if (std::abs(SpacePoint.Mouse.imag()) > std::abs(SpacePoint.PrevMouse.imag()))
+		if (std::abs(SpacePoint.Mouse.imag()) >= std::abs(SpacePoint.PrevMouse.imag()))
 			SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
 		//	SendMouseEvent(MouseEvent::xy,0);
 	}
@@ -882,7 +882,7 @@ extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 #if 1
 	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius) {//|| 
 		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
-		if (std::abs(SpacePoint.Mouse.real()) > std::abs(SpacePoint.PrevMouse.real()))
+		if (std::abs(SpacePoint.Mouse.real()) >= std::abs(SpacePoint.PrevMouse.real()))
 			SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
 		//SendMouseEvent(MouseEvent::xy, 0);
 	}
