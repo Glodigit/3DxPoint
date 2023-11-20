@@ -437,12 +437,17 @@ void Shortcut_BrowserPrevTab(PC pc = PC_Select) {
 #endif
 #endif
 
-double MagnitueMultiplier(double angle) {
+/// <summary>
+/// Corrects for the non-circularity of the x or y inputs.
+/// </summary>
+/// <param name="n"> - The complex number to obtain the multiplier for.</param>
+/// <returns></returns>
+double MagnitueMultiplier(std::complex<double> n) {
 	// Number from 0 to 1. Diagonals produce magnitudes greater than 350, so this is set as the 
 	// minimum value to multiply by to normalise the magnitudes
 	const double DiagonalMultiplier = 348.0 / 424.0;
 	const double x = 2 * (1 - DiagonalMultiplier) / (1 + DiagonalMultiplier);
-	return (2 + x * std::cos(4 * angle)) / (2 + x);
+	return (2 + x * std::cos(4 * std::arg(n))) / (2 + x);
 }
 
 void SelectButtonOnRing()
@@ -458,10 +463,10 @@ void SelectButtonOnRing()
 
 #if 1
 	double currentMagnitude = 
-		std::abs(SpacePoint.ButtonRing) * MagnitueMultiplier(std::arg(SpacePoint.ButtonRing));
+		std::abs(SpacePoint.ButtonRing) * MagnitueMultiplier(SpacePoint.ButtonRing);
 	double prevMagnitude = max(	
-		std::abs(SpacePoint.PrevButtonRing[0]) * MagnitueMultiplier(std::arg(SpacePoint.PrevButtonRing[0])),
-		std::abs(SpacePoint.PrevButtonRing[1]) * MagnitueMultiplier(std::arg(SpacePoint.PrevButtonRing[1]))
+		std::abs(SpacePoint.PrevButtonRing[0]) * MagnitueMultiplier(SpacePoint.PrevButtonRing[0]),
+		std::abs(SpacePoint.PrevButtonRing[1]) * MagnitueMultiplier(SpacePoint.PrevButtonRing[1])
 		);
 #endif
 
@@ -494,7 +499,7 @@ void SelectButtonOnRing()
 		SpacePoint.ButtonEvent = 
 			std::abs(SpacePoint.PrevButtonRing[0]) >= std::abs(SpacePoint.PrevButtonRing[1]) ?
 			SpacePoint.PrevButtonRing[0] : SpacePoint.PrevButtonRing[1];
-		SpacePoint.ButtonEvent *= MagnitueMultiplier(std::arg(SpacePoint.ButtonEvent));
+		SpacePoint.ButtonEvent *= MagnitueMultiplier(SpacePoint.ButtonEvent);
 		onEntry = true;
 	}
 	else if (currentMagnitude < exitThreshold)
