@@ -5,7 +5,7 @@
 #define LOGFILE_ENABLED		true
 #define LOG_PROCESSINFO		true
 #define LOG_SET_BUTTONRING	false
-#define LOG_MOUSE_EVENT		false
+#define LOG_MOUSE_EVENT		true
 
 /// <summary>
 /// The PC to create the DLL for.

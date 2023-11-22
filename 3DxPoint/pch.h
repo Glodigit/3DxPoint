@@ -12,8 +12,11 @@
 #include "stdlib.h"
 #include "stdio.h"
 #include <complex>
-#include <vector>
-#include <chrono>
+#include <cmath>
+//#include <numeric>
+#include <deque>
+//#include <vector>
+//#include <chrono>
 #pragma comment(lib,"winmm.lib")
 #include "mmsystem.h"
 #endif //PCH_H
