@@ -61,7 +61,7 @@ std::complex<double> avgComplexQueue(const std::deque<std::complex<double>>& d, 
 		n = (int)d.size(); // use the whole vector
 	}
 
-	// calculate the sum of the last/first n elements using std::accumulate
+	// calculate the sum of the last/first n elements
 	std::complex<double> sum = 0;
 	if (fromEnd) {
 		for (size_t i = d.size() - n; i < d.size(); i++) {
@@ -118,6 +118,7 @@ std::complex<double> scaleComplex(const std::complex<double>& z, double n)
 {
 	// Find the current magnitude of the complex number
 	double m = std::abs(z);
+	if (m == 0) return m;
 
 	// Divide the complex number by its current magnitude to get a unit complex number
 	std::complex<double> u = z / m;
@@ -353,7 +354,7 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue = 0)
 		}
 		else if (eventType != MouseEvent::scroll && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 18) { reflectOn = true; }
 		if (reflectOn) eventValue *= 0.25;
-}
+	}
 #endif
 
 	double fractionalPart, integerPart;
@@ -1021,10 +1022,15 @@ void UpdateMouse(void) {
 	averagedEnding = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize);
 
 
+#if 1
 	// check if magnitude drop or abrupt angle change and, if so, reset the last n values
-	if (std::abs(averagedBeginning) < std::abs(averagedEnding) ||
-		angleBetweenComplex(averagedBeginning, averagedEnding) > 22.5)
+	double magnitudeChange = std::abs(std::abs(averagedBeginning) - std::abs(averagedEnding));
+	double angleChange = angleBetweenComplex(averagedBeginning, averagedEnding);
+
+	if (magnitudeChange > 20.0 ||
+		angleChange > 22.5)
 		std::fill(SpacePoint.Mouse.end() - SpacePoint.MouseInvalidSize, SpacePoint.Mouse.end(), 0);
+#endif
 
 	// Add % amount of MouseAverage if MouseResult was incomplete
 	UINT z = zeroEnd(SpacePoint.Mouse);
@@ -1047,7 +1053,7 @@ void UpdateMouse(void) {
 			0.5 *
 			(
 				(slowLine[0] - fastLine[0]) *
-				std::cos(pi * (MouseResultMagnitude - slowLine[2]) / (fastLine[1] - slowLine[1])) +
+				std::cos(pi * (MouseResultMagnitude - slowLine[1]) / (fastLine[1] - slowLine[1])) +
 				slowLine[0] + fastLine[0]
 				)
 		);
@@ -1058,6 +1064,29 @@ void UpdateMouse(void) {
 
 	SpacePoint.MouseResult += scaledMouse;
 	SendMouseEvent(MouseEvent::xy);
+
+
+#if (LOGFILE_ENABLED && LOG_MOUSE_DIAG)
+	FILE* fp;
+	if OPEN_LOGFILE_SUCCESSFUL
+	{
+		fwprintf(fp, L"Mouse: Queue Event: MagChange = %5.1f, AngChange = %5.1f, Avg = (%-5.1f + %5.1f i), AvgEnd = (%-5.1f + %5.1f i), sMouse = (%-6.1f ∠ %6.1f), Remainder = (%-5.3f + %5.3f i), %2d elements = ",
+		magnitudeChange, angleChange*toDegrees,
+		SpacePoint.MouseAverage.real(), SpacePoint.MouseAverage.imag(),
+		averagedEnding.real(), averagedEnding.imag(),
+		std::abs(scaledMouse), std::arg(scaledMouse)*toDegrees,
+		SpacePoint.MouseResult.real(), SpacePoint.MouseResult.imag(),
+		(int)SpacePoint.Mouse.size());
+	for (int i = 0; i < SpacePoint.MouseSize; i++) {
+		fwprintf(fp, L"(%-5.1f + %5.1f i) ",
+			SpacePoint.Mouse[i].real(),
+			SpacePoint.Mouse[i].imag());
+	}
+		fwprintf(fp, L"\n");
+		fclose(fp);
+}
+#endif
+
 
 #if 0
 	SpacePoint.MouseResult += scaledMouse;
@@ -1126,29 +1155,36 @@ void AddToMouse(bool isImaginary, int value) {
 	}
 
 	if (SpacePoint.Mouse[0] == 0.0) { // 0 + 0 i
+		//if (value == 0) zeroEnd(SpacePoint.Mouse)
+		
 		// Use the first element if the second element is also 0, else put in a new element
 		if (SpacePoint.Mouse[1] == 0.0) isImaginary ? SpacePoint.Mouse[0].imag(value) : SpacePoint.Mouse[0].real(value);
-		else SpacePoint.Mouse.push_front(isImaginary ? (0, value) : (value));
+		else {
+			SpacePoint.Mouse.push_front(isImaginary ? std::complex<double>(0, value) : std::complex<double>(value, 0));
+			SpacePoint.Mouse.pop_back();
+		}
 	}
 	else if (SpacePoint.Mouse[0].imag() == 0.0) // n + 0 i
 		if (isImaginary) SpacePoint.Mouse[0].imag(value);
 		else { // finished working on element, so scale it and then add the next working element to the front
 			UpdateMouse();
-			SpacePoint.Mouse.push_front((value));
+			SpacePoint.Mouse.push_front(std::complex<double>(value, 0));
 			SpacePoint.Mouse.pop_back();
 		}
 	else if (SpacePoint.Mouse[0].real() == 0.0) // 0 + m i
 		if (!isImaginary) SpacePoint.Mouse[0].real(value);
 		else {
 			UpdateMouse();
-			SpacePoint.Mouse.push_front((0, value));
+			SpacePoint.Mouse.push_front(std::complex<double>(0, value));
 			SpacePoint.Mouse.pop_back();
 		}
 	else { // the number must be n + m i, this element is complete
 		UpdateMouse();
-		SpacePoint.Mouse.push_front(isImaginary ? (0, value) : (value));
+		SpacePoint.Mouse.push_front(isImaginary ? std::complex<double>(0, value) : std::complex<double>(value, 0));
 		SpacePoint.Mouse.pop_back();
 	}
+
+
 
 }
 
