@@ -130,6 +130,28 @@ std::complex<double> scaleComplex(const std::complex<double>& z, double n)
 	return s;
 }
 
+
+// A function to change the argument of all complex numbers in a deque to be the same as the first element
+void changeArg(std::deque<std::complex<double>>& d) {
+	
+	// If the deque is empty or has only one element, do nothing
+	if (d.size() <= 1) return;
+	
+	// Get the argument of the first element
+	double a = std::arg(d.front());
+	if (a == 0) return;
+
+	// Iterate over the deque from the second element
+	for (auto it = next(d.begin()); it != d.end(); it++) {
+		
+		// Get the magnitude of the current element
+		double mag = std::abs(*it);
+	
+		// Create a new complex number with the same magnitude and the new argument
+		*it = std::polar(mag, a);
+	}
+}
+
 #endif
 
 /// DLL functions
@@ -1010,6 +1032,8 @@ void SelectButtonOnRing()
 	}
 }
 
+
+
 void UpdateMouse(void) {
 	std::complex<double> averagedBeginning, averagedEnding, scaledMouse;
 
@@ -1027,9 +1051,11 @@ void UpdateMouse(void) {
 	double magnitudeChange = std::abs(std::abs(averagedBeginning) - std::abs(averagedEnding));
 	double angleChange = angleBetweenComplex(averagedBeginning, averagedEnding);
 
-	if (magnitudeChange > 20.0 ||
-		angleChange > 22.5)
+	if (magnitudeChange > 20.0)
 		std::fill(SpacePoint.Mouse.end() - SpacePoint.MouseInvalidSize, SpacePoint.Mouse.end(), 0);
+	if (std::arg(SpacePoint.Mouse[0]) > 22.5)
+		changeArg(SpacePoint.Mouse);
+
 #endif
 
 	// Add % amount of MouseAverage if MouseResult was incomplete
@@ -1042,9 +1068,9 @@ void UpdateMouse(void) {
 		}
 	}
 
-	// Scale MouseResult based on line->cos->line
-	const double slowLine[2] = { 0.3334, 15 }; // send value[0] between 0 and value[1]
-	const double fastLine[2] = { 120, 120 };
+	// Scale MouseResult based on line -> -cos -> line
+	const double slowLine[2] = { 0.25, 15 }; // send value[0] between 0 and value[1]
+	const double fastLine[2] = { 120, 150 };
 
 	double MouseResultMagnitude = std::abs(averagedEnding);
 	if (MouseResultMagnitude <= slowLine[1]) scaledMouse = scaleComplex(averagedEnding, slowLine[0]);
@@ -1065,6 +1091,11 @@ void UpdateMouse(void) {
 	SpacePoint.MouseResult += scaledMouse;
 	SendMouseEvent(MouseEvent::xy);
 
+	/*
+	Possible ideas
+		- Instead of clearing all o nangle change, rotate all points in queue to match Mouse[0]
+			-> perhaps take magnitude of element and argMouse[0] and saving a new number using polar
+	*/
 
 #if (LOGFILE_ENABLED && LOG_MOUSE_DIAG)
 	FILE* fp;
