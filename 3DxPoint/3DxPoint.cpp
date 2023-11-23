@@ -134,12 +134,12 @@ std::complex<double> scaleComplex(const std::complex<double>& z, double n)
 // A function to change the argument of all complex numbers in a deque to be the same as the first element
 void changeArg(std::deque<std::complex<double>>& d) {
 	
-	// If the deque is empty or has only one element, do nothing
-	if (d.size() <= 1) return;
+	// If the deque is empty or has only one element, do nothing.
+	// Similarly, if the first element is 0.
+	if (d.size() <= 1 || std::abs(d.front()) == 0) return;
 	
 	// Get the argument of the first element
 	double a = std::arg(d.front());
-	if (a == 0) return;
 
 	// Iterate over the deque from the second element
 	for (auto it = next(d.begin()); it != d.end(); it++) {
@@ -1037,8 +1037,10 @@ void SelectButtonOnRing()
 void UpdateMouse(void) {
 	std::complex<double> averagedBeginning, averagedEnding, scaledMouse;
 
-	// scale out non-circularity
+	// scale out non-circularity and repoint all complex numbers to the 
+	// latest known direction
 	SpacePoint.Mouse[0] *= MagnitueMultiplier(SpacePoint.Mouse[0]);
+	changeArg(SpacePoint.Mouse);
 
 	// get averages
 	SpacePoint.MouseAverage = avgComplexQueue(SpacePoint.Mouse, -1);
@@ -1051,35 +1053,34 @@ void UpdateMouse(void) {
 	double magnitudeChange = std::abs(std::abs(averagedBeginning) - std::abs(averagedEnding));
 	double angleChange = angleBetweenComplex(averagedBeginning, averagedEnding);
 
-	if (magnitudeChange > 20.0)
-		std::fill(SpacePoint.Mouse.end() - SpacePoint.MouseInvalidSize, SpacePoint.Mouse.end(), 0);
-	if (std::arg(SpacePoint.Mouse[0]) > 22.5)
-		changeArg(SpacePoint.Mouse);
+	//if (magnitudeChange > 0.1 * std::abs(SpacePoint.MouseAverage))
+		//std::fill(SpacePoint.Mouse.end() - SpacePoint.MouseInvalidSize, SpacePoint.Mouse.end(), 0);
+	//if (std::arg(SpacePoint.Mouse[0]) > 20)
 
 #endif
 
-	// Add % amount of MouseAverage if MouseResult was incomplete
+	// Add % amount of averagedBeginning if averagedEnding was incomplete
 	UINT z = zeroEnd(SpacePoint.Mouse);
 	if (z > 0) {
-		if (z >= SpacePoint.MouseSmoothingSize) averagedEnding = SpacePoint.MouseAverage;
+		if (z >= SpacePoint.MouseSmoothingSize) averagedEnding = averagedBeginning;
 		else {
 			double x = (double)z / SpacePoint.MouseSmoothingSize;
-			averagedEnding = averagedEnding * (1 - x) + SpacePoint.MouseAverage * x;
+			averagedEnding = averagedEnding * (1 - x) + averagedBeginning * x;
 		}
 	}
 
 	// Scale MouseResult based on line -> -cos -> line
-	const double slowLine[2] = { 0.25, 15 }; // send value[0] between 0 and value[1]
-	const double fastLine[2] = { 120, 150 };
+	const double slowLine[2] = { 0.25, 15 }; // sendmouse value[0] between 0 and value[1]
+	const double fastLine[2] = { 60, 120 };
 
-	double MouseResultMagnitude = std::abs(averagedEnding);
-	if (MouseResultMagnitude <= slowLine[1]) scaledMouse = scaleComplex(averagedEnding, slowLine[0]);
-	else if (MouseResultMagnitude <= fastLine[1]) {
+	double averagedEndingMagnitude = std::abs(averagedEnding);
+	if (averagedEndingMagnitude <= slowLine[1]) scaledMouse = scaleComplex(averagedEnding, slowLine[0]);
+	else if (averagedEndingMagnitude <= fastLine[1]) {
 		scaledMouse = scaleComplex(averagedEnding,
 			0.5 *
 			(
 				(slowLine[0] - fastLine[0]) *
-				std::cos(pi * (MouseResultMagnitude - slowLine[1]) / (fastLine[1] - slowLine[1])) +
+				std::cos(pi * (averagedEndingMagnitude - slowLine[1]) / (fastLine[1] - slowLine[1])) +
 				slowLine[0] + fastLine[0]
 				)
 		);
@@ -1093,11 +1094,12 @@ void UpdateMouse(void) {
 
 	/*
 	Possible ideas
-		- Instead of clearing all o nangle change, rotate all points in queue to match Mouse[0]
+		- Instead of clearing all on angle change, rotate all points in queue to match Mouse[0]
 			-> perhaps take magnitude of element and argMouse[0] and saving a new number using polar
+		- Take the average of all values excluding the train of 0's to the end
 	*/
 
-#if (LOGFILE_ENABLED && LOG_MOUSE_DIAG)
+#if (LOGFILE_ENABLED && LOG_MOUSE_DIAGNOSTICS)
 	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{

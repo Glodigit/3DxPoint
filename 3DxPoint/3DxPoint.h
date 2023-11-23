@@ -62,9 +62,9 @@ typedef struct SpaceState
 	//double AbsRadius = 20; // Absolute movement radius for mouse
 	std::deque<std::complex<double>> Mouse;
 	UINT
-		MouseSize = 8,			// size of Mouse
+		MouseSize = 5,			// size of Mouse
 		MouseSmoothingSize = 3, // values to consider for MouseResult
-		MouseInvalidSize = 5;	// values to reset if abrupt change detected
+		MouseInvalidSize = 3;	// values to reset if abrupt change detected
 	std::complex<double> MouseResult, MouseAverage;
 	int Scroll{};
 	double Speed = 1;
