@@ -2,11 +2,13 @@
 #include "pch.h"
 
 
-#define LOGFILE_ENABLED			false
+#define LOGFILE_ENABLED			true
 #define LOG_PROCESSINFO			true
 #define LOG_SET_BUTTONRING		false
 #define LOG_MOUSE_EVENT			false
-#define LOG_MOUSE_DIAGNOSTICS	false
+#define LOG_MOUSE_DIAGNOSTICS	true
+
+// Todo: add more settings, such as thresholds 
 
 /// <summary>
 /// The PC to create the DLL for.

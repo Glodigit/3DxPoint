@@ -152,6 +152,11 @@ void changeArg(std::deque<std::complex<double>>& d) {
 	}
 }
 
+// A function that returns the value of the bell curve at x
+double bellCurve(double x, double mu, double sigma) {
+	return exp(-pow(x - mu, 2) / (2 * pow(sigma, 2)));
+}
+
 #endif
 
 /// DLL functions
@@ -1043,15 +1048,15 @@ void UpdateMouse(void) {
 	changeArg(SpacePoint.Mouse);
 
 	// get averages
-	SpacePoint.MouseAverage = avgComplexQueue(SpacePoint.Mouse, -1);
+	//SpacePoint.MouseAverage = avgComplexQueue(SpacePoint.Mouse, -1);
 	averagedBeginning = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize, false);
 	averagedEnding = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize);
 
 
 #if 1
 	// check if magnitude drop or abrupt angle change and, if so, reset the last n values
-	double magnitudeChange = std::abs(std::abs(averagedBeginning) - std::abs(averagedEnding));
-	double angleChange = angleBetweenComplex(averagedBeginning, averagedEnding);
+	//double angleChange = angleBetweenComplex(averagedBeginning, averagedEnding);
+	double magnitudeChange = (std::abs(SpacePoint.Mouse[0]) - std::abs(averagedBeginning)) / std::abs(averagedBeginning);
 
 	//if (magnitudeChange > 0.1 * std::abs(SpacePoint.MouseAverage))
 		//std::fill(SpacePoint.Mouse.end() - SpacePoint.MouseInvalidSize, SpacePoint.Mouse.end(), 0);
@@ -1069,8 +1074,8 @@ void UpdateMouse(void) {
 		}
 	}
 
-	// Scale MouseResult based on line -> -cos -> line
-	const double slowLine[2] = { 0.25, 15 }; // sendmouse value[0] between 0 and value[1]
+	// Set cursor velocity, based on line -> -cos -> line graph
+	const double slowLine[2] = { 0.25, 17 }; // sendmouse value[0] between 0 and value[1]
 	const double fastLine[2] = { 60, 120 };
 
 	double averagedEndingMagnitude = std::abs(averagedEnding);
@@ -1087,7 +1092,15 @@ void UpdateMouse(void) {
 	}
 	else scaledMouse = scaleComplex(averagedEnding, fastLine[0]);
 
-	scaledMouse *= SpacePoint.Speed;
+
+	// this scales the mouse by the speed and then by bell curves 
+	// (unless the speed has increased and Mouse[] < slowLine[1], to prevent correction overshoots
+	const double curveSpread[2] = { 1, 5 }, k = 1;
+	scaledMouse *= SpacePoint.Speed * (magnitudeChange < 0) ?
+		bellCurve(magnitudeChange, 0, curveSpread[0]) :
+		//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?  
+		1 + k * (1 - bellCurve(magnitudeChange, 0, curveSpread[1]));// :
+			//1;
 
 	SpacePoint.MouseResult += scaledMouse;
 	SendMouseEvent(MouseEvent::xy);
@@ -1103,9 +1116,10 @@ void UpdateMouse(void) {
 	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
-		fwprintf(fp, L"Mouse: Queue Event: MagChange = %5.1f, AngChange = %5.1f, Avg = (%-5.1f + %5.1f i), AvgEnd = (%-5.1f + %5.1f i), sMouse = (%-6.1f ∠ %6.1f), Remainder = (%-5.3f + %5.3f i), %2d elements = ",
-		magnitudeChange, angleChange*toDegrees,
-		SpacePoint.MouseAverage.real(), SpacePoint.MouseAverage.imag(),
+		fwprintf(fp, L"Mouse: Queue Event: MagChange = %5.1f, AvgStart = (%-5.1f + %5.1f i), AvgEnd = (%-5.1f + %5.1f i), sMouse = (%-6.1f ∠ %6.1f), Remainder = (%-5.3f + %5.3f i), %2d elements = ",
+		magnitudeChange, 
+		//SpacePoint.MouseAverage.real(), SpacePoint.MouseAverage.imag(),
+		averagedBeginning.real(), averagedBeginning.imag(),
 		averagedEnding.real(), averagedEnding.imag(),
 		std::abs(scaledMouse), std::arg(scaledMouse)*toDegrees,
 		SpacePoint.MouseResult.real(), SpacePoint.MouseResult.imag(),
