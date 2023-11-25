@@ -133,20 +133,20 @@ std::complex<double> scaleComplex(const std::complex<double>& z, double n)
 
 // A function to change the argument of all complex numbers in a deque to be the same as the first element
 void changeArg(std::deque<std::complex<double>>& d) {
-	
+
 	// If the deque is empty or has only one element, do nothing.
 	// Similarly, if the first element is 0.
 	if (d.size() <= 1 || std::abs(d.front()) == 0) return;
-	
+
 	// Get the argument of the first element
 	double a = std::arg(d.front());
 
 	// Iterate over the deque from the second element
 	for (auto it = next(d.begin()); it != d.end(); it++) {
-		
+
 		// Get the magnitude of the current element
 		double mag = std::abs(*it);
-	
+
 		// Create a new complex number with the same magnitude and the new argument
 		*it = std::polar(mag, a);
 	}
@@ -1042,8 +1042,10 @@ void SelectButtonOnRing()
 
 void UpdateMouse(void) {
 	std::complex<double> averagedBeginning, averagedEnding, scaledMouse;
-	const double slowLine[2] = { 0.2, 15 }; // sendmouse value[0] between 0 and value[1]
-	const double fastLine[2] = { 60, 120 };
+	const double slowLine[2] = { 0.15, 15 }; // sendmouse value[0] between 0 and value[1]
+	const double fastLine[2] = { 60, 150 };
+	const double curveSpread[2] = { 0.5, 0.5 }, k = 1;
+	const double offset = 0.0; // depreciated
 
 	// scale out non-circularity and repoint all complex numbers to the 
 	// latest known direction
@@ -1054,21 +1056,21 @@ void UpdateMouse(void) {
 	// get averages
 	//SpacePoint.MouseAverage = avgComplexQueue(SpacePoint.Mouse, -1);
 	averagedBeginning = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize, false);
-	double magnitudeChange = std::abs(SpacePoint.Mouse[0]) / std::abs(averagedBeginning) - 1;
-
-	const double curveSpread[2] = { 0.5, 0.5 }, k = -0.5;
-	const double offset = 0.0;
+#if 0
 	magnitudeChange -= offset;
-	for (int i = 1; i < SpacePoint.Mouse.size(); i++) {
+	for (int i = SpacePoint.Mouse.size() - SpacePoint.MouseSmoothingSize - 1; i < SpacePoint.Mouse.size(); i++) {
 		double multiplier = (magnitudeChange < 0) ?
 			bellCurve(magnitudeChange, 0, curveSpread[0]) :
 			//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
 			1 + k * (1 - bellCurve(magnitudeChange, 0, curveSpread[1]));// :
-			//1;
+		//1;
 		SpacePoint.Mouse[i] *= multiplier;
 	}
-	magnitudeChange+= offset;
+	magnitudeChange += offset;
+#endif
+
 	averagedEnding = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize);
+	double magnitudeChange = std::abs(SpacePoint.Mouse[0] / averagedEnding) - 1;
 
 
 #if 1
@@ -1092,7 +1094,7 @@ void UpdateMouse(void) {
 		}
 	}
 #endif
-	
+
 	// Set cursor velocity, based on line -> -cos -> line graph
 	double averagedEndingMagnitude = std::abs(averagedEnding);
 	if (averagedEndingMagnitude <= slowLine[1]) scaledMouse = scaleComplex(averagedEnding, slowLine[0]);
@@ -1105,14 +1107,25 @@ void UpdateMouse(void) {
 				slowLine[0] + fastLine[0]
 				)
 		);
-	}
+}
 	else scaledMouse = scaleComplex(averagedEnding, fastLine[0]);
 
 
 	// this scales the mouse by the speed and then by bell curves 
 	// (unless the speed has increased and Mouse[] < slowLine[1], to prevent correction overshoots
-	scaledMouse *= SpacePoint.Speed;
+#if 1
+	magnitudeChange -= offset;
+	double multiplier = (magnitudeChange < 0) ?
+		bellCurve(magnitudeChange, 0, curveSpread[0]) :
+		//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
+		1 + k * (1 - bellCurve(magnitudeChange, 0, curveSpread[1]));// :
+	//1;
+	magnitudeChange += offset;
 
+	scaledMouse *= SpacePoint.Speed * multiplier;
+#endif 
+
+	//scaledMouse *= SpacePoint.Speed;
 	SpacePoint.MouseResult += scaledMouse;
 	SendMouseEvent(MouseEvent::xy);
 
@@ -1128,11 +1141,11 @@ void UpdateMouse(void) {
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
 		fwprintf(fp, L"Mouse: Queue Event: MagChange = %5.2f, AvgStart = (%-5.1f + %5.1f i), AvgEnd = (%-5.1f + %5.1f i), sMouse = (%-6.1f ∠ %6.1f), Remainder = (%-5.3f + %5.3f i), %2d elements = ",
-		magnitudeChange, 
+		magnitudeChange,
 		//SpacePoint.MouseAverage.real(), SpacePoint.MouseAverage.imag(),
 		averagedBeginning.real(), averagedBeginning.imag(),
 		averagedEnding.real(), averagedEnding.imag(),
-		std::abs(scaledMouse), std::arg(scaledMouse)*toDegrees,
+		std::abs(scaledMouse), std::arg(scaledMouse) * toDegrees,
 		SpacePoint.MouseResult.real(), SpacePoint.MouseResult.imag(),
 		(int)SpacePoint.Mouse.size());
 	for (int i = 0; i < SpacePoint.MouseSize; i++) {
@@ -1142,7 +1155,7 @@ void UpdateMouse(void) {
 	}
 		fwprintf(fp, L"\n");
 		fclose(fp);
-}
+	}
 #endif
 
 
@@ -1214,7 +1227,7 @@ void AddToMouse(bool isImaginary, int value) {
 
 	if (SpacePoint.Mouse[0] == 0.0) { // 0 + 0 i
 		//if (value == 0) zeroEnd(SpacePoint.Mouse)
-		
+
 		// Use the first element if the second element is also 0, else put in a new element
 		if (SpacePoint.Mouse[1] == 0.0) isImaginary ? SpacePoint.Mouse[0].imag(value) : SpacePoint.Mouse[0].real(value);
 		else {
