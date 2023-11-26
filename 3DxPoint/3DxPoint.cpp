@@ -1069,7 +1069,7 @@ void UpdateMouse(void) {
 #endif
 
 	averagedEnding = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize);
-	double magnitudeChange = std::abs(SpacePoint.Mouse[0] / averagedEnding) - 1;
+	double magnitudeChange = (averagedEnding == 0.0) ? 0.0 : std::abs(SpacePoint.Mouse[0] / averagedEnding) - 1;
 
 
 #if 1
@@ -1224,8 +1224,6 @@ void AddToMouse(bool isImaginary, int value) {
 	}
 
 	if (SpacePoint.Mouse[0] == 0.0) { // 0 + 0 i
-		//if (value == 0) zeroEnd(SpacePoint.Mouse)
-
 		// Use the first element if the second element is also 0, else put in a new element
 		if (SpacePoint.Mouse[1] == 0.0) isImaginary ? SpacePoint.Mouse[0].imag(value) : SpacePoint.Mouse[0].real(value);
 		else {
@@ -1253,7 +1251,12 @@ void AddToMouse(bool isImaginary, int value) {
 		SpacePoint.Mouse.pop_back();
 	}
 
-
+#if 0
+	// Check to see if the mouse has been inactive
+	if (SpacePoint.Mouse[0] == 0.0 && std::chrono::high_resolution_clock::now() >= SpacePoint.LastMouseEvent + 3 * SpacePoint.PollingRate)
+		std::fill(SpacePoint.Mouse.begin(), SpacePoint.Mouse.end(), 0);
+	SpacePoint.LastMouseEvent = std::chrono::high_resolution_clock::now();
+#endif
 
 }
 

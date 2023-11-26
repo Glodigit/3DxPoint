@@ -16,7 +16,7 @@
 //#include <numeric>
 #include <deque>
 //#include <vector>
-//#include <chrono>
+#include <chrono>
 #pragma comment(lib,"winmm.lib")
 #include "mmsystem.h"
 #endif //PCH_H

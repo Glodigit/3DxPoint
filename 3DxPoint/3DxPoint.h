@@ -56,7 +56,8 @@ typedef struct SpaceState
 	//UINT	MouseBufferSize = 8, 
 		//	MouseSmoothingSize = 3,
 			//ButtonRingBufferSize = 5;
-	//std::chrono::steady_clock::time_point LastMouseEvent = std::chrono::high_resolution_clock::now();
+	std::chrono::steady_clock::time_point LastMouseEvent = std::chrono::high_resolution_clock::now();
+	std::chrono::duration<double, std::ratio<1, 60>> PollingRate;
 	//std::chrono::steady_clock::time_point LastButtonRingEvent = std::chrono::high_resolution_clock::now();
 	//std::complex<double> PrevMouse;
 	//double AbsRadius = 20; // Absolute movement radius for mouse
