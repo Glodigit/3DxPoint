@@ -1044,8 +1044,7 @@ void UpdateMouse(void) {
 	std::complex<double> averagedBeginning, averagedEnding, scaledMouse;
 	const double slowLine[2] = { 0.15, 15 }; // sendmouse value[0] between 0 and value[1]
 	const double fastLine[2] = { 60, 150 };
-	const double curveSpread[2] = { 0.5, 0.5 }, k = 1;
-	const double offset = 0.0; // depreciated
+	const double curveSpread[2] = { 0.5, 0.75 }, minMulti = -3;
 
 	// scale out non-circularity and repoint all complex numbers to the 
 	// latest known direction
@@ -1107,20 +1106,19 @@ void UpdateMouse(void) {
 				slowLine[0] + fastLine[0]
 				)
 		);
-}
+	}
 	else scaledMouse = scaleComplex(averagedEnding, fastLine[0]);
 
 
 	// this scales the mouse by the speed and then by bell curves 
 	// (unless the speed has increased and Mouse[] < slowLine[1], to prevent correction overshoots
 #if 1
-	magnitudeChange -= offset;
 	double multiplier = (magnitudeChange < 0) ?
 		bellCurve(magnitudeChange, 0, curveSpread[0]) :
 		//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
-		1 + k * (1 - bellCurve(magnitudeChange, 0, curveSpread[1]));// :
+		1 + (1 - minMulti) * (bellCurve(magnitudeChange, 0, curveSpread[1]) - 1);// :
+		//1 + (1 - minMulti) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);// :
 	//1;
-	magnitudeChange += offset;
 
 	scaledMouse *= SpacePoint.Speed * multiplier;
 #endif 
