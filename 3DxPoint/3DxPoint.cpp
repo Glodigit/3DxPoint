@@ -1042,9 +1042,12 @@ void SelectButtonOnRing()
 
 void UpdateMouse(void) {
 	std::complex<double> averagedBeginning, averagedEnding, scaledMouse;
-	const double slowLine[2] = { 0.15, 15 }; // sendmouse value[0] between 0 and value[1]
-	const double fastLine[2] = { 60, 150 };
-	const double curveSpread[2] = { 0.15, 5 }, minMulti = -3;
+	const double
+		slowLine[2] = { 0.15, 15 }, // send velocity = value[0] between 0 and value[1]
+		fastLine[2] = { 20, 75 },
+		curveSpread[2] = { 0.15, 5 },
+		minMulti[2] = { -3, 1 },	// minimum multiplier for percentage decrease / increase respectively
+		curvePow = 2.3;
 
 	// scale out non-circularity and repoint all complex numbers to the 
 	// latest known direction
@@ -1112,13 +1115,20 @@ void UpdateMouse(void) {
 
 	// this scales the mouse by the speed and then by bell curves 
 	// (unless the speed has increased and Mouse[] < slowLine[1], to prevent correction overshoots
+	// also, skip the calculation if the respective min's are equal to 1.
 #if 1
 	double multiplier = (magnitudeChange < 0) ?
-		bellCurve(magnitudeChange, 0, curveSpread[0]) :
+		minMulti[0] == 1.0 ? 1.0 :
+		//bellCurve(magnitudeChange, 0, curveSpread[0]) :
+		//1 + (1 - minMulti[0]) * (bellCurve(magnitudeChange, 0, curveSpread[0]) - 1) :
+		//1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow) :
+		//1 + (1 - minMulti[0]) * magnitudeChange :
+		0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(pi * magnitudeChange)) :
 		//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
+		minMulti[1] == 1.0 ? 1.0 :
 		//1 + (1 - minMulti) * (bellCurve(magnitudeChange, 0, curveSpread[1]) - 1);// :
-		1 + (1 - minMulti) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);// :
-	//1;
+		1 + (1 - minMulti[1]) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);// :
+		//1;
 
 	scaledMouse *= SpacePoint.Speed * multiplier;
 #endif 
@@ -1153,7 +1163,7 @@ void UpdateMouse(void) {
 	}
 		fwprintf(fp, L"\n");
 		fclose(fp);
-	}
+}
 #endif
 
 
@@ -1227,7 +1237,7 @@ void AddToMouse(bool isImaginary, int value) {
 		// Use the first element if the second element is also 0, else put in a new element
 		if (SpacePoint.Mouse[1] == 0.0) isImaginary ? SpacePoint.Mouse[0].imag(value) : SpacePoint.Mouse[0].real(value);
 		else {
-			UpdateMouse();
+			//UpdateMouse();
 			SpacePoint.Mouse.push_front(isImaginary ? std::complex<double>(0, value) : std::complex<double>(value, 0));
 			SpacePoint.Mouse.pop_back();
 		}
@@ -1259,7 +1269,7 @@ void AddToMouse(bool isImaginary, int value) {
 	SpacePoint.LastMouseEvent = std::chrono::high_resolution_clock::now();
 #endif
 
-}
+	}
 
 /// Set SpacePoint functions / exports
 #if 1
