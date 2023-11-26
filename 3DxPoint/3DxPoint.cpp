@@ -155,7 +155,7 @@ void changeArg(std::deque<std::complex<double>>& d) {
 // A function that returns the value of the bell curve at x
 double bellCurve(double x, double mu, double sigma) {
 	if (sigma == 0) return x == 0 ? 1 : 0;
-	return exp(-pow(x - mu, 2) / (2 * pow(sigma, 2)));
+	return exp(-pow(x - mu, 2) / pow(sigma, 2));
 }
 
 #endif
@@ -1044,7 +1044,7 @@ void UpdateMouse(void) {
 	std::complex<double> averagedBeginning, averagedEnding, scaledMouse;
 	const double slowLine[2] = { 0.15, 15 }; // sendmouse value[0] between 0 and value[1]
 	const double fastLine[2] = { 60, 150 };
-	const double curveSpread[2] = { 0.5, 0.75 }, minMulti = -3;
+	const double curveSpread[2] = { 0.15, 5 }, minMulti = -3;
 
 	// scale out non-circularity and repoint all complex numbers to the 
 	// latest known direction
@@ -1116,8 +1116,8 @@ void UpdateMouse(void) {
 	double multiplier = (magnitudeChange < 0) ?
 		bellCurve(magnitudeChange, 0, curveSpread[0]) :
 		//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
-		1 + (1 - minMulti) * (bellCurve(magnitudeChange, 0, curveSpread[1]) - 1);// :
-		//1 + (1 - minMulti) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);// :
+		//1 + (1 - minMulti) * (bellCurve(magnitudeChange, 0, curveSpread[1]) - 1);// :
+		1 + (1 - minMulti) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);// :
 	//1;
 
 	scaledMouse *= SpacePoint.Speed * multiplier;
@@ -1138,7 +1138,7 @@ void UpdateMouse(void) {
 	FILE* fp;
 	if OPEN_LOGFILE_SUCCESSFUL
 	{
-		fwprintf(fp, L"Mouse: Queue Event: MagChange = %5.2f, AvgStart = (%-5.1f + %5.1f i), AvgEnd = (%-5.1f + %5.1f i), sMouse = (%-6.1f ∠ %6.1f), Remainder = (%-5.3f + %5.3f i), %2d elements = ",
+		fwprintf(fp, L"Mouse: Queue Event: MagChange = %5.2f, AvgStart = (%-5.1f + %5.1f i), AvgEnd = (%-5.1f + %5.1f i), sMouse = (%-6.1f ∠ %6.1f), Remainder = (%-5.2f + %5.2f i), %2d elements = ",
 		magnitudeChange,
 		//SpacePoint.MouseAverage.real(), SpacePoint.MouseAverage.imag(),
 		averagedBeginning.real(), averagedBeginning.imag(),
@@ -1227,6 +1227,7 @@ void AddToMouse(bool isImaginary, int value) {
 		// Use the first element if the second element is also 0, else put in a new element
 		if (SpacePoint.Mouse[1] == 0.0) isImaginary ? SpacePoint.Mouse[0].imag(value) : SpacePoint.Mouse[0].real(value);
 		else {
+			UpdateMouse();
 			SpacePoint.Mouse.push_front(isImaginary ? std::complex<double>(0, value) : std::complex<double>(value, 0));
 			SpacePoint.Mouse.pop_back();
 		}
