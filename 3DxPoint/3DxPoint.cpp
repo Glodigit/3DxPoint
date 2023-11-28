@@ -611,7 +611,7 @@ void Shortcut_BrowserPrevTab(PC pc = PC_Select) {
 double MagnitueMultiplier(std::complex<double> n) {
 	// Number from 0 to 1. Diagonals produce magnitudes greater than 350, so this is set as the 
 	// minimum value to multiply by to normalise the magnitudes
-	const double DiagonalMultiplier = 348.0 / 424.0;
+	const double DiagonalMultiplier = 348.0 / 410.0;
 	const double x = 2 * (1 - DiagonalMultiplier) / (1 + DiagonalMultiplier);
 	return (2 + x * std::cos(4 * std::arg(n))) / (2 + x);
 }
@@ -1049,7 +1049,7 @@ void UpdateMouse(void) {
 		fastLine[2] = { 20, 75 },
 		curveSpread[2] = { 0.15, 5 },
 		minMulti[2] = { -4, 1 },	// minimum multiplier for percentage decrease / increase respectively
-		curvePow = 6;
+		curvePow = 1.5;
 
 	// scale out non-circularity and repoint all complex numbers to the 
 	// latest known direction (if not bouncing back)
@@ -1145,15 +1145,16 @@ void UpdateMouse(void) {
 	if (magnitudeChange < 0) {
 		if (minMulti[0] == 1.0) multiplier = 1.0;
 		else {
-			//multiplier =
-				//1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow);
+			multiplier =
+				1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow);
 				//0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(2 * pi * magnitudeChange));
-#if 1
-			if (magnitudeChange < -0.5) 
+#if 0
+			const double zPoint = -0.3;
+			if (magnitudeChange < zPoint) 
 				multiplier =
-					0.5 * (minMulti[0] - minMulti[0] * std::cos(2 * pi * (magnitudeChange + 0.5)));
+					0.5 * (minMulti[0] - minMulti[0] * std::cos(pi * (magnitudeChange - zPoint)/(-1.0 - zPoint)));
 			else if (magnitudeChange >= -1.0) 
-				multiplier = 0.5 * (std::cos(2 * pi * magnitudeChange) + 1);
+				multiplier = 0.5 * (std::cos(2 * pi * magnitudeChange / zPoint) + 1);
 #endif
 		}
 	}
