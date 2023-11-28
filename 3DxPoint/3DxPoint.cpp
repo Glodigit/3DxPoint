@@ -132,25 +132,27 @@ std::complex<double> scaleComplex(const std::complex<double>& z, double n)
 
 
 // A function to change the argument of all complex numbers in a deque to be the same as the first element
-void changeArg(std::deque<std::complex<double>>& d) {
-
+void changeArg(std::deque<std::complex<double>>& d, std::complex<double> changeTo ) {
 	// If the deque is empty or has only one element, do nothing.
 	// Similarly, if the first element is 0.
 	if (d.size() <= 1 || std::abs(d.front()) == 0) return;
 
 	// Get the argument of the first element
-	double a = std::arg(d.front());
+	//double a = std::arg(d.front());
+	double a = std::arg(changeTo);
 
 	// Iterate over the deque from the second element
-	for (auto it = next(d.begin()); it != d.end(); it++) {
+	for (auto it = d.begin(); it != d.end(); it++) {
+		if (a != std::arg(*it)); {
+			// Get the magnitude of the current element
+			double mag = std::abs(*it);
 
-		// Get the magnitude of the current element
-		double mag = std::abs(*it);
-
-		// Create a new complex number with the same magnitude and the new argument
-		*it = std::polar(mag, a);
+			// Create a new complex number with the same magnitude and the new argument
+			*it = std::polar(mag, a); }
 	}
 }
+
+
 
 // A function that returns the value of the bell curve at x
 double bellCurve(double x, double mu, double sigma) {
@@ -1047,13 +1049,14 @@ void UpdateMouse(void) {
 		fastLine[2] = { 20, 75 },
 		curveSpread[2] = { 0.15, 5 },
 		minMulti[2] = { -3, 1 },	// minimum multiplier for percentage decrease / increase respectively
-		curvePow = 2.3;
+		curvePow = 6;
 
 	// scale out non-circularity and repoint all complex numbers to the 
-	// latest known direction
+	// latest known direction (if not bouncing back)
 	SpacePoint.Mouse[0] *= MagnitueMultiplier(SpacePoint.Mouse[0]);
-	changeArg(SpacePoint.Mouse);
 
+	if (SpacePoint.MouseBounce == 0.0) changeArg(SpacePoint.Mouse, SpacePoint.Mouse[0]);
+	else changeArg(SpacePoint.Mouse, SpacePoint.MouseBounce);
 
 	// get averages
 	//SpacePoint.MouseAverage = avgComplexQueue(SpacePoint.Mouse, -1);
@@ -1072,8 +1075,13 @@ void UpdateMouse(void) {
 #endif
 
 	averagedEnding = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize);
-	double magnitudeChange = (averagedEnding == 0.0) ? 0.0 : std::abs(SpacePoint.Mouse[0] / averagedEnding) - 1;
-
+	double magnitudeChange = 
+		(averagedEnding == 0.0) ? 0.0 : std::abs(SpacePoint.Mouse[0] / averagedEnding) - 1;
+	
+	if (magnitudeChange < 0 ) 
+		// change only if not already set
+		SpacePoint.MouseBounce = (SpacePoint.MouseBounce == 0.0) ? averagedEnding : SpacePoint.MouseBounce;
+	else SpacePoint.MouseBounce = 0.0;
 
 #if 1
 	// check if magnitude drop or abrupt angle change and, if so, reset the last n values

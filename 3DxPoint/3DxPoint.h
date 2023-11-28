@@ -66,7 +66,7 @@ typedef struct SpaceState
 		MouseSize = 5,			// size of Mouse
 		MouseSmoothingSize = 3, // values to consider for MouseResult
 		MouseChangeSize = 3;	// values to reset if abrupt change detected
-	std::complex<double> MouseResult;// MouseAverage;
+	std::complex<double> MouseResult, MouseBounce;
 	int Scroll{};
 	double Speed = 1;
 	std::complex<double> ButtonRing;
