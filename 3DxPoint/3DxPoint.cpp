@@ -1048,7 +1048,7 @@ void UpdateMouse(void) {
 		slowLine[2] = { 0.15, 15 }, // send velocity = value[0] between 0 and value[1]
 		fastLine[2] = { 20, 75 },
 		curveSpread[2] = { 0.15, 5 },
-		minMulti[2] = { -3, 1 },	// minimum multiplier for percentage decrease / increase respectively
+		minMulti[2] = { -4, 1 },	// minimum multiplier for percentage decrease / increase respectively
 		curvePow = 6;
 
 	// scale out non-circularity and repoint all complex numbers to the 
@@ -1125,18 +1125,43 @@ void UpdateMouse(void) {
 	// (unless the speed has increased and Mouse[] < slowLine[1], to prevent correction overshoots
 	// also, skip the calculation if the respective min's are equal to 1.
 #if 1
+
+	// old way of doing things
+#if 0
 	double multiplier = (magnitudeChange < 0) ?
 		minMulti[0] == 1.0 ? 1.0 :
 		//bellCurve(magnitudeChange, 0, curveSpread[0]) :
 		//1 + (1 - minMulti[0]) * (bellCurve(magnitudeChange, 0, curveSpread[0]) - 1) :
 		//1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow) :
 		//1 + (1 - minMulti[0]) * magnitudeChange :
-		0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(pi * magnitudeChange)) :
+		0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(2 * pi * magnitudeChange)) :
 		//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
 		minMulti[1] == 1.0 ? 1.0 :
 		//1 + (1 - minMulti) * (bellCurve(magnitudeChange, 0, curveSpread[1]) - 1);// :
 		1 + (1 - minMulti[1]) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);// :
 		//1;
+#endif
+	double multiplier = 1.0;
+	if (magnitudeChange < 0) {
+		if (minMulti[0] == 1.0) multiplier = 1.0;
+		else {
+			//multiplier =
+				//1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow);
+				//0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(2 * pi * magnitudeChange));
+#if 1
+			if (magnitudeChange < -0.5) 
+				multiplier =
+					0.5 * (minMulti[0] - minMulti[0] * std::cos(2 * pi * (magnitudeChange + 0.5)));
+			else if (magnitudeChange >= -1.0) 
+				multiplier = 0.5 * (std::cos(2 * pi * magnitudeChange) + 1);
+#endif
+		}
+	}
+	else {
+		if (minMulti[1] == 1.0) multiplier = 1.0;
+		else 
+			multiplier = 1 + (1 - minMulti[1]) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);
+	}
 
 	scaledMouse *= SpacePoint.Speed * multiplier;
 #endif 
