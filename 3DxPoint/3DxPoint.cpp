@@ -623,7 +623,7 @@ void SelectButtonOnRing()
 
 	const UINT entryThreshold[3] = { 42, 124, 248 };
 	const double exitThreshold = 10;
-	const int cardinalAngle = 30, anglePadding = 1;
+	const int cardinalAngle = 40, anglePadding = 1;
 	const double triggerDifference = -1; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
 	const bool soundOnTrigger = false; // false = sound when threshold passed
 
@@ -1048,8 +1048,9 @@ void UpdateMouse(void) {
 		slowLine[2] = { 0.15, 15 }, // send velocity = value[0] between 0 and value[1]
 		fastLine[2] = { 20, 75 },
 		curveSpread[2] = { 0.15, 5 },
-		minMulti[2] = { -4, 1 },	// minimum multiplier for percentage decrease / increase respectively
-		curvePow = 1.5;
+		minMulti[2] = { -4, 0.5 },	// minimum multiplier for percentage decrease / increase respectively
+		zPoint[2] = { -0.5, 8 }, // Zero Point: where the curve passes (-%) or gets closes to (+%) the x axis
+		curvePow = 1.5; // used for -ve % change
 
 	// scale out non-circularity and repoint all complex numbers to the 
 	// latest known direction (if not bouncing back)
@@ -1142,26 +1143,32 @@ void UpdateMouse(void) {
 		//1;
 #endif
 	double multiplier = 1.0;
-	if (magnitudeChange < 0) {
+	if (magnitudeChange <= 0) {
 		if (minMulti[0] == 1.0) multiplier = 1.0;
 		else {
-			multiplier =
-				1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow);
+			//multiplier =
+				//1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow);
 				//0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(2 * pi * magnitudeChange));
-#if 0
-			const double zPoint = -0.3;
-			if (magnitudeChange < zPoint) 
+#if 1
+			if (magnitudeChange > zPoint[0])
 				multiplier =
-					0.5 * (minMulti[0] - minMulti[0] * std::cos(pi * (magnitudeChange - zPoint)/(-1.0 - zPoint)));
-			else if (magnitudeChange >= -1.0) 
-				multiplier = 0.5 * (std::cos(2 * pi * magnitudeChange / zPoint) + 1);
+				//0.5 * (std::cos(2 * pi * magnitudeChange / zPoint) + 1);
+				1 - std::pow(std::abs(magnitudeChange / zPoint[0]), curvePow);
+			
+			else if (magnitudeChange >= -1.0)
+				multiplier =
+				0.5 * (minMulti[0] - minMulti[0] * std::cos(pi * (magnitudeChange - zPoint[0]) / (-1.0 - zPoint[0])));
+				//minMulti[0] - minMulti[0] * std::pow(std::abs((magnitudeChange - -1.0) / (zPoint - -1.0)), curvePow);
+			else multiplier = minMulti[0];
 #endif
 		}
 	}
 	else {
 		if (minMulti[1] == 1.0) multiplier = 1.0;
-		else 
-			multiplier = 1 + (1 - minMulti[1]) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);
+		else
+			multiplier =
+			//1 + (1 - minMulti[1]) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);
+			1 + (minMulti[1] - 1) * bellCurve(magnitudeChange, zPoint[1], curveSpread[1]);
 	}
 
 	scaledMouse *= SpacePoint.Speed * multiplier;
