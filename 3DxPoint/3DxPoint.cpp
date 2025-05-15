@@ -368,26 +368,14 @@ extern "C" __declspec(dllexport) void Mirror(WCHAR * args)
 static void SendMouseEvent(MouseEvent eventType, int eventValue = 0)
 {
 	UINT status;
-	INPUT input;
 	const UINT nInputs = 1;
-
+	
+	INPUT input;
 	ZeroMemory(&input, sizeof(INPUT));
 	input.type = INPUT_MOUSE;
 
-#if 0
-	static bool reflectOn = false;
-	if (eventType == MouseEvent::x || eventType == MouseEvent::y || eventType == MouseEvent::scroll) {
-
-		if (std::abs(eventValue) < 20) {
-			reflectOn = false;
-			return;
-		}
-		else if (eventType != MouseEvent::scroll && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) - 18) { reflectOn = true; }
-		if (reflectOn) eventValue *= 0.25;
-	}
-#endif
-
 	double fractionalPart, integerPart;
+
 
 	switch (eventType)
 	{
@@ -406,12 +394,10 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue = 0)
 		break;
 	case MouseEvent::x:
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
-		//input.mi.dx = (long)std::round(eventValue * SpacePoint.Speed);
 		input.mi.dx = eventValue;
 		break;
 	case MouseEvent::y:
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
-		//input.mi.dy = (long)std::round(eventValue * SpacePoint.Speed);
 		input.mi.dy = eventValue;
 		break;
 	case MouseEvent::xy:
@@ -419,18 +405,18 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue = 0)
 
 		// Make sure that there's at least some applicable change
 		if ((int)SpacePoint.MouseResult.real() == 0 &&
-			(int)SpacePoint.MouseResult.imag() == 0) return;
+			(int)SpacePoint.MouseResult.imag() == 0) 
+			{
+				return;
+			}
 
 		input.mi.dwFlags = MOUSEEVENTF_MOVE;
-		//input.mi.dx = (long)std::round((SpacePoint.Mouse.imag() + SpacePoint.PrevMouse.imag()) / 2 * SpacePoint.Speed);
-		//input.mi.dy = (long)std::round((SpacePoint.Mouse.real() + SpacePoint.PrevMouse.real()) / 2 * SpacePoint.Speed);
 		fractionalPart = std::modf(SpacePoint.MouseResult.imag(), &integerPart);
 		input.mi.dx = (long)integerPart; SpacePoint.MouseResult.imag(fractionalPart);
 		fractionalPart = std::modf(SpacePoint.MouseResult.real(), &integerPart);
 		input.mi.dy = (long)integerPart; SpacePoint.MouseResult.real(fractionalPart);
 		if (input.mi.dx == 0 && input.mi.dy == 0) return;
 		break;
-		//default: return;
 	}
 	/*	This doesn't work if the window under the cursor is running as admin,
 		but 3DxService is not run as admin! */
@@ -480,29 +466,6 @@ static void SendMouseEvent(MouseEvent eventType, int eventValue = 0)
 
 /// Shortcuts
 #if 1
-
-/* Use https://learn.microsoft.com/en-us/windows/win32/inputdev/virtual-key-codes or run the below code that
-	BingChat generated in a new C++ Console App project.
-
-#include <iostream>
-#include <windows.h>
-int main() {
-	while (true) {
-		for (int i = 1; i < 256; i++) {
-			if (GetAsyncKeyState(i) & 0x8000) {
-				std::cout << "Virtual key code: " << i << std::endl;
-				Sleep(500); // Wait for 500 milliseconds
-				if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
-					return 0; // Exit the program if the Escape key is held
-				}
-			}
-		}
-	}
-	return 0;
-}
-
-*/
-//   
 
 // Macros to make writing these shortcut macros faster / more concise
 #define KB ki.wVk =// Key Button
@@ -598,10 +561,8 @@ void Shortcut_BrowserPrevTab(PC pc = PC_Select) {
 	else if (pc == PC::Computer1) { TapKey(VK_F8); }
 }
 
-
-
 #endif
-#endif
+#endif // SendInput
 
 /// <summary>
 /// Corrects for the non-circularity of the x or y inputs.
@@ -627,23 +588,12 @@ void SelectButtonOnRing()
 	const double triggerDifference = -1; // E.G: +10 will mean 39 -> 50 -> 59 -> trigger.
 	const bool soundOnTrigger = false; // false = sound when threshold passed
 
-#if 1
 	double currentMagnitude =
 		std::abs(SpacePoint.ButtonRing) * MagnitueMultiplier(SpacePoint.ButtonRing);
 	double prevMagnitude = max(
 		std::abs(SpacePoint.PrevButtonRing[0]) * MagnitueMultiplier(SpacePoint.PrevButtonRing[0]),
 		std::abs(SpacePoint.PrevButtonRing[1]) * MagnitueMultiplier(SpacePoint.PrevButtonRing[1])
 	);
-#endif
-
-#if 0
-	double currentMagnitude =
-		std::abs(SpacePoint.ButtonRing);
-	double prevMagnitude = max(
-		std::abs(SpacePoint.PrevButtonRing[0]),
-		std::abs(SpacePoint.PrevButtonRing[1])
-	);
-#endif
 
 	/// Rising / falling edge of Schmitt trigger
 	if (currentMagnitude < prevMagnitude + triggerDifference &&
@@ -661,10 +611,9 @@ void SelectButtonOnRing()
 			fclose(fp);
 		}
 #endif
-
-			SpacePoint.ButtonEvent =
-			std::abs(SpacePoint.PrevButtonRing[0]) >= std::abs(SpacePoint.PrevButtonRing[1]) ?
-			SpacePoint.PrevButtonRing[0] : SpacePoint.PrevButtonRing[1];
+		SpacePoint.ButtonEvent =
+		std::abs(SpacePoint.PrevButtonRing[0]) >= std::abs(SpacePoint.PrevButtonRing[1]) ?
+		SpacePoint.PrevButtonRing[0] : SpacePoint.PrevButtonRing[1];
 		SpacePoint.ButtonEvent *= MagnitueMultiplier(SpacePoint.ButtonEvent);
 		onEntry = true;
 	}
@@ -1041,7 +990,6 @@ void SelectButtonOnRing()
 }
 
 
-
 void UpdateMouse(void) {
 	std::complex<double> averagedBeginning, averagedEnding, scaledMouse;
 	const double
@@ -1059,22 +1007,7 @@ void UpdateMouse(void) {
 	if (SpacePoint.MouseBounce == 0.0) changeArg(SpacePoint.Mouse, SpacePoint.Mouse[0]);
 	else changeArg(SpacePoint.Mouse, SpacePoint.MouseBounce);
 
-	// get averages
-	//SpacePoint.MouseAverage = avgComplexQueue(SpacePoint.Mouse, -1);
 	averagedBeginning = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize, false);
-#if 0
-	magnitudeChange -= offset;
-	for (int i = SpacePoint.Mouse.size() - SpacePoint.MouseSmoothingSize - 1; i < SpacePoint.Mouse.size(); i++) {
-		double multiplier = (magnitudeChange < 0) ?
-			bellCurve(magnitudeChange, 0, curveSpread[0]) :
-			//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
-			1 + k * (1 - bellCurve(magnitudeChange, 0, curveSpread[1]));// :
-		//1;
-		SpacePoint.Mouse[i] *= multiplier;
-	}
-	magnitudeChange += offset;
-#endif
-
 	averagedEnding = avgComplexQueue(SpacePoint.Mouse, SpacePoint.MouseSmoothingSize);
 	double magnitudeChange = 
 		(averagedEnding == 0.0) ? 0.0 : std::abs(SpacePoint.Mouse[0] / averagedEnding) - 1;
@@ -1083,28 +1016,6 @@ void UpdateMouse(void) {
 		// change only if not already set
 		SpacePoint.MouseBounce = (SpacePoint.MouseBounce == 0.0) ? averagedEnding : SpacePoint.MouseBounce;
 	else SpacePoint.MouseBounce = 0.0;
-
-#if 1
-	// check if magnitude drop or abrupt angle change and, if so, reset the last n values
-	//double angleChange = angleBetweenComplex(averagedBeginning, averagedEnding);
-
-	//if (magnitudeChange > 0.1 * std::abs(SpacePoint.MouseAverage))
-		//std::fill(SpacePoint.Mouse.end() - SpacePoint.MouseInvalidSize, SpacePoint.Mouse.end(), 0);
-	//if (std::arg(SpacePoint.Mouse[0]) > 20)
-
-#endif
-
-#if 0
-	// Add % amount of averagedBeginning if averagedEnding was incomplete
-	UINT z = zeroEnd(SpacePoint.Mouse);
-	if (z > 0) {
-		if (z >= SpacePoint.MouseSmoothingSize) averagedEnding = averagedBeginning;
-		else {
-			double x = (double)z / SpacePoint.MouseSmoothingSize;
-			averagedEnding = averagedEnding * (1 - x) + averagedBeginning * x;
-		}
-	}
-#endif
 
 	// Set cursor velocity, based on line -> -cos -> line graph
 	double averagedEndingMagnitude = std::abs(averagedEnding);
@@ -1125,31 +1036,15 @@ void UpdateMouse(void) {
 	// this scales the mouse by the speed and then by bell curves 
 	// (unless the speed has increased and Mouse[] < slowLine[1], to prevent correction overshoots
 	// also, skip the calculation if the respective min's are equal to 1.
-#if 1
-
-	// old way of doing things
-#if 0
-	double multiplier = (magnitudeChange < 0) ?
-		minMulti[0] == 1.0 ? 1.0 :
-		//bellCurve(magnitudeChange, 0, curveSpread[0]) :
-		//1 + (1 - minMulti[0]) * (bellCurve(magnitudeChange, 0, curveSpread[0]) - 1) :
-		//1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow) :
-		//1 + (1 - minMulti[0]) * magnitudeChange :
-		0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(2 * pi * magnitudeChange)) :
-		//(std::abs(SpacePoint.Mouse[0]) > slowLine[1]) ?
-		minMulti[1] == 1.0 ? 1.0 :
-		//1 + (1 - minMulti) * (bellCurve(magnitudeChange, 0, curveSpread[1]) - 1);// :
-		1 + (1 - minMulti[1]) * (std::exp(-magnitudeChange / curveSpread[1]) - 1);// :
-		//1;
-#endif
 	double multiplier = 1.0;
 	if (magnitudeChange <= 0) {
 		if (minMulti[0] == 1.0) multiplier = 1.0;
 		else {
-			//multiplier =
-				//1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow);
-				//0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(2 * pi * magnitudeChange));
 #if 1
+			multiplier =
+				1 + (minMulti[0] - 1) * std::pow(std::abs(magnitudeChange), curvePow);
+				//0.5 * (1 + minMulti[0] + (1 - minMulti[0]) * std::cos(2 * pi * magnitudeChange));
+#else
 			if (magnitudeChange > zPoint[0])
 				multiplier =
 				//0.5 * (std::cos(2 * pi * magnitudeChange / zPoint) + 1);
@@ -1172,18 +1067,8 @@ void UpdateMouse(void) {
 	}
 
 	scaledMouse *= SpacePoint.Speed * multiplier;
-#endif 
-
-	//scaledMouse *= SpacePoint.Speed;
 	SpacePoint.MouseResult += scaledMouse;
 	SendMouseEvent(MouseEvent::xy);
-
-	/*
-	Possible ideas
-		- Instead of clearing all on angle change, rotate all points in queue to match Mouse[0]
-			-> perhaps take magnitude of element and argMouse[0] and saving a new number using polar
-		- Take the average of all values excluding the train of 0's to the end
-	*/
 
 #if (LOGFILE_ENABLED && LOG_MOUSE_DIAGNOSTICS)
 	FILE* fp;
@@ -1206,24 +1091,6 @@ void UpdateMouse(void) {
 		fclose(fp);
 }
 #endif
-
-
-#if 0
-	SpacePoint.MouseResult += scaledMouse;
-	if (SpacePoint.MouseResult.real() >= 1 && SpacePoint.MouseResult.imag() >= 1) {
-		// mouse moved enough to change both values at the same time
-		SendMouseEvent(MouseEvent::xy, 0);
-	}
-	else if (scaledMouse.real() >= 1) {
-		// store the imaginary component and send the re
-		SpacePoint.MouseResult.imag(scaledMouse.imag());
-		SendMouseEvent(MouseEvent::y, scaledMouse.real());
-	}
-	//SpacePoint.MouseResult.real(SpacePoint.MouseResult.real() - (int)SpacePoint.MouseResult.real());
-	//SpacePoint.MouseResult.imag(SpacePoint.MouseResult.imag() - (int)SpacePoint.MouseResult.imag());
-	SpacePoint.MouseResult.real(std::modf())
-#endif
-
 }
 
 /// <summary>
@@ -1302,14 +1169,6 @@ void AddToMouse(bool isImaginary, int value) {
 		SpacePoint.Mouse.push_front(isImaginary ? std::complex<double>(0, value) : std::complex<double>(value, 0));
 		SpacePoint.Mouse.pop_back();
 	}
-
-#if 0
-	// Check to see if the mouse has been inactive
-	if (SpacePoint.Mouse[0] == 0.0 && std::chrono::high_resolution_clock::now() >= SpacePoint.LastMouseEvent + 3 * SpacePoint.PollingRate)
-		std::fill(SpacePoint.Mouse.begin(), SpacePoint.Mouse.end(), 0);
-	SpacePoint.LastMouseEvent = std::chrono::high_resolution_clock::now();
-#endif
-
 	}
 
 /// Set SpacePoint functions / exports
@@ -1320,20 +1179,6 @@ extern "C" __declspec(dllexport) void SetMouseX(WCHAR * args)
 #if LOG_MOUSE_EVENT
 	LogMouseEvent(0);
 #endif
-
-#if 0
-	// Applies absolute zone to the centre of the spacemouse and for the end of any large moves.
-	// Could use some kind of polling-based smoothing of the cursor.
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius) {// || 
-		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
-		if (std::abs(SpacePoint.Mouse.imag()) >= std::abs(SpacePoint.PrevMouse.imag()))
-			SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.PrevMouse.imag()));
-		//	SendMouseEvent(MouseEvent::xy,0);
-	}
-	else SendMouseEvent(MouseEvent::x, (int)(SpacePoint.Mouse.imag() - SpacePoint.AbsRadius * std::sin(std::arg(SpacePoint.Mouse))));
-
-	SpacePoint.PrevMouse.imag(SpacePoint.Mouse.imag());
-#endif
 }
 
 extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
@@ -1341,17 +1186,6 @@ extern "C" __declspec(dllexport) void SetMouseY(WCHAR * args)
 	AddToMouse(false, INT_ARGS);
 #if LOG_MOUSE_EVENT
 	LogMouseEvent(1);
-#endif
-#if 0
-	if (std::abs(SpacePoint.Mouse) <= SpacePoint.AbsRadius) {//|| 
-		//(SpacePoint.AbsZone < std::abs(SpacePoint.Mouse) && std::abs(SpacePoint.Mouse) < std::abs(SpacePoint.PrevMouse) * 0.90)) {
-		if (std::abs(SpacePoint.Mouse.real()) >= std::abs(SpacePoint.PrevMouse.real()))
-			SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.PrevMouse.real()));
-		//SendMouseEvent(MouseEvent::xy, 0);
-	}
-	else SendMouseEvent(MouseEvent::y, (int)(SpacePoint.Mouse.real() - SpacePoint.AbsRadius * std::cos(std::arg(SpacePoint.Mouse))));
-
-	SpacePoint.PrevMouse.real(SpacePoint.Mouse.real());
 #endif
 }
 
@@ -1375,25 +1209,9 @@ extern "C" __declspec(dllexport) void SetSpeed(WCHAR * args)
 	const double maxSpeed = 6;
 	const double exponent = 3; // Keep greater than 0
 
-	// m = 0.8 x^2 + 0.2 (for example)
-	// m = (1-y)x^2 + y
-	SpacePoint.Speed = //(speed < 1) ?
-		(1 - minSpeed) * std::pow(speed, exponent) + minSpeed
-		//:
-#if 0
-		(minSpeed - 1)
-		* std::pow(2 - speed, exponent)
-		+ (2 - minSpeed)
-
-		(1 - maxSpeed)
-		* std::pow(2 - speed, exponent)
-		+ maxSpeed
-#endif
-		;
-
-	// LogSpeedEvent();
+	// m = (1-y)x^2 + y. Example: 0.8 x^2 + 0.2 
+	SpacePoint.Speed = (1 - minSpeed) * std::pow(speed, exponent) + minSpeed;
 }
-
 
 extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
 {
@@ -1404,6 +1222,7 @@ extern "C" __declspec(dllexport) void SetButtonRingReal(WCHAR * args)
 #endif
 	SelectButtonOnRing();
 }
+
 extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
 {
 	SpacePoint.ButtonRing.imag(INT_ARGS * (SpacePoint.MirrorRing ? -1 : 1));
@@ -1412,6 +1231,7 @@ extern "C" __declspec(dllexport) void SetButtonRingImag(WCHAR * args)
 #endif
 	SelectButtonOnRing();
 }
+
 /// <summary>
 /// Set the ButtonRing value using a single function call for the _X, _Y, _Rx or _Ry axes.
 /// Mainly for testing / debug purposes.
@@ -1430,6 +1250,4 @@ extern "C" __declspec(dllexport) void SetButtonRing(WCHAR * args)
 		SetButtonRingImag(args);
 	}
 }
-
 #endif
-
